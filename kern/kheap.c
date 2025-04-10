@@ -50,7 +50,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 
 
 	//return the physical address corresponding to given virtual_address
-	//refer to the project presentation and documentation for deta
+	//refer to the project presentation and documentation for det
 
 	//change this "return" according to your answer
 
