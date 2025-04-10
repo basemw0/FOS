@@ -47,7 +47,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kheap_physical_address()
 	// Write your code here, remove the panic and write your code
-	panic("kheap_physical_address() is not implemented yet...!!");
+
 
 	//return the physical address corresponding to given virtual_address
 	//refer to the project presentation and documentation for details
