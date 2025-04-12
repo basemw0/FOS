@@ -32,7 +32,8 @@ int KHEAP_ARR[KHEAP_ARR_SIZE];
 
 //First ever function called in FOS kernel
 void FOS_initialize()
-{	for(int i =0;i<KHEAP_ARR_SIZE;i++){
+{	//initialize the KERNEL_HEAP array
+	for(int i =0;i<KHEAP_ARR_SIZE;i++){
 	KHEAP_ARR[i]=-1;
 	}
 	//get actual addresses after code linking
