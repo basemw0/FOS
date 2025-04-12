@@ -3,9 +3,13 @@
 #include <kern/memory_manager.h>
 
 //NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
+//Array name is KHEAP_ARR
+int nextFit = 0;
 
 void* kmalloc(unsigned int size)
 {
+
+
 	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kmalloc()
 	// Write your code here, remove the panic and write your code
 	kpanic_into_prompt("kmalloc() is not implemented yet...!!");

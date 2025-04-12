@@ -27,10 +27,14 @@ void print_welcome_message();
 extern uint32 enableBuffering();
 extern uint32 isBufferingEnabled();
 extern uint32 setModifiedBufferLength();
+const int KHEAP_ARR_SIZE = ((KERNEL_HEAP_MAX-KERNEL_HEAP_START)/4096);
+int KHEAP_ARR[KHEAP_ARR_SIZE];
 
 //First ever function called in FOS kernel
 void FOS_initialize()
-{
+{	for(int i =0;i<KHEAP_ARR_SIZE;i++){
+	KHEAP_ARR[i]=-1;
+	}
 	//get actual addresses after code linking
 	extern char start_of_uninitialized_data_section[], end_of_kernel[];
 
