@@ -27,7 +27,7 @@ void print_welcome_message();
 extern uint32 enableBuffering();
 extern uint32 isBufferingEnabled();
 extern uint32 setModifiedBufferLength();
-const int KHEAP_ARR_SIZE = ((KERNEL_HEAP_MAX-KERNEL_HEAP_START)/4096);
+const int KHEAP_ARR_SIZE = ((KERNEL_HEAP_MAX-KERNEL_HEAP_START)/PAGE_SIZE);
 int KHEAP_ARR[KHEAP_ARR_SIZE];
 
 //First ever function called in FOS kernel
