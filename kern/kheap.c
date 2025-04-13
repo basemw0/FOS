@@ -1,14 +1,20 @@
 #include <inc/memlayout.h>
 #include <kern/kheap.h>
 #include <kern/memory_manager.h>
-
 //NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
+int KHEAP_ARR[KHEAP_ARR_SIZE];
 
 //Array name is KHEAP_ARR
 int nextFit = 0;
-
+bool flag = 0;
 void* kmalloc(unsigned int size)
 {
+	if(flag == 0){
+	for(int i =0;i<KHEAP_ARR_SIZE;i++){
+		KHEAP_ARR[i]=-1;
+		}
+	flag=1;
+	}
 	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kmalloc()
 	// Write your code here, remove the panic and write your code
 	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
@@ -22,7 +28,7 @@ void* kmalloc(unsigned int size)
 	uint32 start=-1;
 
 	do{
-		if(start !=-1 && i-start==ROUND_UP(size,PAGE_SIZE)/PAGE_SIZE)
+		if(start !=-1 && i-start==ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE)
 				{
 
 					struct Frame_Info* fptr=NULL;
@@ -33,7 +39,7 @@ void* kmalloc(unsigned int size)
 						{ cprintf("\n no frame found for page, memory is FULL\n");
 							return NULL;
 						}
-						int res=map_frame(ptr_page_directory,fptr,(j*PAGE_SIZE)+KERNEL_HEAP_START);
+						int res=map_frame(ptr_page_directory,fptr,(void*)(j*PAGE_SIZE)+KERNEL_HEAP_START,PERM_USER | PERM_WRITEABLE);
 						if(res!=0)
 						{ 	cprintf("\n no frame found for page table, memory is FULL\n");
 							return NULL;
@@ -41,7 +47,7 @@ void* kmalloc(unsigned int size)
 					}
 					KHEAP_ARR[start]=i-start;
 					nextFit=i;
-					return (start*PAGE_SIZE)+KERNEL_HEAP_START;
+					return (void*)(start*PAGE_SIZE)+KERNEL_HEAP_START;
 				}
 				else if(KHEAP_ARR[i]==-1 && start==-1) start=i;
 				else if(KHEAP_ARR[i]!=-1)
@@ -61,7 +67,7 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
-	uint32 va = (uint32*)virtual_address;
+	uint32 va = (uint32)virtual_address;
 	uint32 page_number = (va - KERNEL_HEAP_START)/PAGE_SIZE;
 	uint32 block_size = KHEAP_ARR[page_number];
 	KHEAP_ARR[page_number] = -1;
@@ -123,7 +129,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 
 	uint32* page_table_ptr = NULL;
 
-	get_page_table(ptr_page_directory, (void *)virtual_address, 0, &page_table_ptr);
+	get_page_table(ptr_page_directory, (void *)virtual_address, &page_table_ptr);
 	if(page_table_ptr == NULL){
 		return -1;
 	}
