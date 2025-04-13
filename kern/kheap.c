@@ -67,13 +67,19 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
+	if ((uint32)virtual_address < KERNEL_HEAP_START || (uint32)virtual_address >= KERNEL_HEAP_MAX)
+	        return;
 	uint32 va = (uint32)virtual_address;
 	uint32 page_number = (va - KERNEL_HEAP_START)/PAGE_SIZE;
+	if (KHEAP_ARR[page_number] == -1)
+		        return;
 	uint32 block_size = KHEAP_ARR[page_number];
+	uint32 end_address = va + (block_size * PAGE_SIZE);
 	KHEAP_ARR[page_number] = -1;
-	for(uint32 address = va; address < address + (block_size * PAGE_SIZE); address += PAGE_SIZE){
-    struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, NULL);
-    if (frame_info != NULL)
+	uint32 * ptr_page = NULL;
+	for (uint32 address = va; address < end_address ;address += PAGE_SIZE ) {
+	        struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, &ptr_page);
+	        if (frame_info != NULL)
            {
                free_frame(frame_info);
            }
