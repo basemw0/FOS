@@ -39,7 +39,7 @@ void* kmalloc(unsigned int size)
 						{ cprintf("\n no frame found for page, memory is FULL\n");
 							return NULL;
 						}
-						int res=map_frame(ptr_page_directory,fptr,(void*)(j*PAGE_SIZE)+KERNEL_HEAP_START,PERM_USER | PERM_WRITEABLE);
+						int res=map_frame(ptr_page_directory,fptr,(void*)(j*PAGE_SIZE)+KERNEL_HEAP_START, PERM_WRITEABLE);
 						if(res!=0)
 						{ 	cprintf("\n no frame found for page table, memory is FULL\n");
 							return NULL;
