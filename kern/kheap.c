@@ -4,79 +4,106 @@
 //NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
 int KHEAP_ARR[KHEAP_ARR_SIZE];
 
-//Array name is KHEAP_ARR
+/*
+ KHEAP_ARR Values
+ Value = -1 -> Free space
+ Value > 0 -> block_size(IN PAGES) taken by this page number
+ Value = 0 -> taken but not the start of the block
+ */
+
 int nextFit = 0;
 bool flag = 0;
 void* kmalloc(unsigned int size)
 {
+	//Initializing the array with -1 once
 	if(flag == 0){
-	for(int i =0;i<KHEAP_ARR_SIZE;i++){
-		KHEAP_ARR[i]=-1;
+		for(int i = 0; i < KHEAP_ARR_SIZE; i++){
+			KHEAP_ARR[i] = -1;
 		}
-	flag=1;
+		flag = 1;
 	}
-	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kmalloc()
-	// Write your code here, remove the panic and write your code
-	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 
-	//NOTE: Allocation is based on FIRST FIT strategy
-	//NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
-	//refer to the project presentation and documentation for details
+	if(size == 0)
+		return NULL;
 
-	//change this "return" according to your answer
-	uint32 i=nextFit;
-	uint32 start=-1;
+	uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+	uint32 i = nextFit;
+	uint32 start = -1;
+	uint32 count = 0;
 
-	do{
-		if(start !=-1 && i-start==ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE)
-				{
+	uint32 limit = 0;
+	while(limit < KHEAP_ARR_SIZE) {
+		//Found empty place
+		if(KHEAP_ARR[i] == -1) {
+			if(start == -1)
+				start = i;
+			count++;
+			if(count == num_pages) {
+				for(uint32 j = 0; j < num_pages; j++) {
+					uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
+					struct Frame_Info* fptr = NULL;
 
-					struct Frame_Info* fptr=NULL;
-					for(uint32 j=start;j<i;j=(j+1)%KHEAP_ARR_SIZE)
-					{
-						allocate_frame(&fptr);
-						if(fptr==NULL)
-						{ cprintf("\n no frame found for page, memory is FULL\n");
-							return NULL;
-						}
-						int res=map_frame(ptr_page_directory,fptr,(void*)(j*PAGE_SIZE)+KERNEL_HEAP_START, PERM_WRITEABLE);
-						if(res!=0)
-						{ 	cprintf("\n no frame found for page table, memory is FULL\n");
-							return NULL;
-						}
+					allocate_frame(&fptr);
+					if(fptr == NULL) {
+						//No frame found because Memory is full
+						return NULL;
 					}
-					KHEAP_ARR[start]=i-start;
-					nextFit=i;
-					return (void*)(start*PAGE_SIZE)+KERNEL_HEAP_START;
+					uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
+					int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
+					if(res != 0) {
+						return NULL;
+					}
 				}
-				else if(KHEAP_ARR[i]==-1 && start==-1) start=i;
-				else if(KHEAP_ARR[i]!=-1)
-				{
-					i=(i+KHEAP_ARR[i])%KHEAP_ARR_SIZE;
-					start=-1;
-					continue;
-				}
-				i=(i+1);
-				if(i==KHEAP_ARR_SIZE) {start=-1; i=0;}
-	}while(i != nextFit);
 
+				KHEAP_ARR[start] = num_pages;
+				for(uint32 j = 1; j < num_pages; j++) {
+					uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
+					KHEAP_ARR[page_index] = 0;
+				}
+				nextFit = (start + num_pages) % KHEAP_ARR_SIZE;
+
+				return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
+			}
+		}
+		else {
+			// if you hit an allocated block just skip it
+			if(KHEAP_ARR[i] > 0) {
+				i = (i + KHEAP_ARR[i]) % KHEAP_ARR_SIZE;
+			}
+			else {
+				i = (i + 1) % KHEAP_ARR_SIZE;
+			}
+			start = -1;
+			count = 0;
+			limit++;
+			continue;
+		}
+
+		// Move to next slot
+		i = (i + 1) % KHEAP_ARR_SIZE;
+		limit++;
+	}
 
 	return NULL;
 }
-
 
 void kfree(void* virtual_address)
 {
 	if ((uint32)virtual_address < KERNEL_HEAP_START || (uint32)virtual_address >= KERNEL_HEAP_MAX)
 	        return;
+
 	uint32 va = (uint32)virtual_address;
 	uint32 page_number = (va - KERNEL_HEAP_START)/PAGE_SIZE;
+
 	if (KHEAP_ARR[page_number] == -1)
 		        return;
+
 	uint32 block_size = KHEAP_ARR[page_number];
 	uint32 end_address = va + (block_size * PAGE_SIZE);
-	KHEAP_ARR[page_number] = -1;
 	uint32 * ptr_page = NULL;
+	for(int i =0;i<block_size;i++){
+		KHEAP_ARR[page_number+i] = -1;
+	}
 	for (uint32 address = va; address < end_address ;address += PAGE_SIZE ) {
 	        struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, &ptr_page);
 	        if (frame_info != NULL)
