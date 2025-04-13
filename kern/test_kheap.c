@@ -1407,7 +1407,7 @@ int test_kfree()
 		freeFrames = sys_calculate_free_frames() ;
 		freeDiskFrames = pf_calculate_free_frames() ;
 		ptr_allocations[8] = kmalloc(20*kilo);
-		cprintf("THE ALLOCATED SPACE AT ADD %x\n",ptr_allocations[8]);
+		//cprintf("THE ALLOCATED SPACE AT ADD %x\n",ptr_allocations[8]);
 		if ((uint32) ptr_allocations[8] != (ACTUAL_START + 13*Mega + 32*kilo)) panic("Wrong start address for the allocated space... check return address of kmalloc & updating of heap ptr");
 		if ((pf_calculate_free_frames() - freeDiskFrames) != 0) panic("Page file is changed while it's not expected to. (pages are wrongly allocated/de-allocated in PageFile)");
 		if ((freeFrames - sys_calculate_free_frames()) != 5) panic("Wrong allocation: pages are not loaded successfully into memory");

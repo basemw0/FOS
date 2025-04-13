@@ -21,5 +21,7 @@ unsigned int kheap_virtual_address(unsigned int physical_address);
 unsigned int kheap_physical_address(unsigned int virtual_address);
 
 int numOfKheapVACalls ;
+//Used in the command_prompt.c in test_kmalloc to choose which type of kmalloc will be used
+char AllocationChoice;
 
 #endif // FOS_KERN_KHEAP_H_
