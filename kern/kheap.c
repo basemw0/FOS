@@ -14,7 +14,7 @@ int nextFit = 0;
 bool flag = 0;
 
 void* kmalloc(unsigned int size){
-/* NextFit (Our Main)
+
 		//Initializing the KHEAP_ARR with -1 once
 		if(flag == 0){
 			for(int i = 0; i < KHEAP_ARR_SIZE; i++){
@@ -26,6 +26,7 @@ void* kmalloc(unsigned int size){
 		if(size == 0)
 			return NULL;
 
+/* NextFit (Our Main)
 		//i --> current index in the KHEAP_ARR
 		//start --> hold the start index of a free block
 		//count --> counts how many consecutive pages have been found
@@ -89,13 +90,8 @@ void* kmalloc(unsigned int size){
 		return NULL;
 */
 
-/*	//Initializing the KHEAP_ARR with -1 once
-			if(flag == 0){
-				for(int i = 0; i < KHEAP_ARR_SIZE; i++){
-					KHEAP_ARR[i] = -1;
-				}
-				flag = 1;
-			}
+
+/* FirstFit
 
 			if(size == 0)
 				return NULL;
@@ -103,8 +99,6 @@ void* kmalloc(unsigned int size){
 			//i --> current index in the KHEAP_ARR
 			//start --> hold the start index of a free block
 			//count --> counts how many consecutive pages have been found
-			//limit --> counter to limit loops to one cycle and prevent infinite looping
-			int firstFit =0;
 			uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 			uint32 i = 0;
 			uint32 start = -1;
@@ -135,8 +129,6 @@ void* kmalloc(unsigned int size){
 						}
 						//Update the start index with the number of pages this process was allocated
 						KHEAP_ARR[start] = num_pages;
-						//Update nextFit
-						firstFit = 0;
 						//return address
 						return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
 					}
@@ -161,12 +153,12 @@ void* kmalloc(unsigned int size){
 			return NULL;
 */
 
-/* WORSTFIT
+/* WORSTFIT / BESTFIT (change the lines with the corresponding comments to get BestFit)
 
 	int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	int i =0;
-	int worst =-1;
-	int worstStart =0;
+	int worst =-1;       //KHEAP_ARR_SIZE+1;
+	int worstStart =-1;
 	int start =-1;
 	int count = 0;
 	while(i < KHEAP_ARR_SIZE){
@@ -178,7 +170,8 @@ void* kmalloc(unsigned int size){
 				count++;
 				i++;
 			}
-		if(count>worst) {
+		//if(count >= process_size && count < worst) {
+			if(count>worst){
 			worst = count;
 			worstStart = start;
 			}
@@ -218,8 +211,9 @@ void* kmalloc(unsigned int size){
 	}else{
 		return NULL;
 	}
- */
+*/
 }
+
 
 void kfree(void* virtual_address)
 {
