@@ -14,78 +14,68 @@ int nextFit = 0;
 bool flag = 0;
 void* kmalloc(unsigned int size)
 {
-	//Initializing the KHEAP_ARR with -1 once
 	if(flag == 0){
-		for(int i = 0; i < KHEAP_ARR_SIZE; i++){
-			KHEAP_ARR[i] = -1;
-		}
-		flag = 1;
-	}
-
-	if(size == 0)
-		return NULL;
-
-	//i --> current index in the KHEAP_ARR
-	//start --> hold the start index of a free block
-	//count --> counts how many consecutive pages have been found
-	//limit --> counter to limit loops to one cycle and prevent infinite looping
-
-	uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
-	uint32 i = nextFit;
-	uint32 start = -1;
-	uint32 count = 0;
-
-	uint32 limit = 0;
-	while(limit < KHEAP_ARR_SIZE) {
-		//Found empty place
-		if(KHEAP_ARR[i] == -1) {
-			if(start == -1)
-				start = i;
-			count++;
-			if(count == num_pages) {
-				for(uint32 j = 0; j < num_pages; j++) {
-					uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
-					struct Frame_Info* fptr = NULL;
-
-					allocate_frame(&fptr);
-					if(fptr == NULL) {
-						//No frame found because Memory is full
-						return NULL;
-					}
-					uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
-					int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
-					if(res != 0) {
-						return NULL;
-					}
+			for(int i =0;i<KHEAP_ARR_SIZE;i++){
+				KHEAP_ARR[i]=-1;
 				}
-				//Update the start index with the number of pages this process was allocated
-				KHEAP_ARR[start] = num_pages;
-				//Update nextFit
-				nextFit = (start + num_pages) % KHEAP_ARR_SIZE;
-				//return address
-				return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
+			flag=1;
 			}
-		}
-		else {
-			// if you hit an allocated block just skip it
-			if(KHEAP_ARR[i] > 0) {
-				i = (i + KHEAP_ARR[i]) % KHEAP_ARR_SIZE;
-			}
-			else {
-				i = (i + 1) % KHEAP_ARR_SIZE;
-			}
-			start = -1;
-			count = 0;
-			limit++;
-			continue;
-		}
+		if(size == 0)
+			return NULL;
+			//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kmalloc()
+			// Write your code here, remove the panic and write your code
+			//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 
-		// Move to next slot
-		i = (i + 1) % KHEAP_ARR_SIZE;
-		limit++;
-	}
+			//NOTE: Allocation is based on FIRST FIT strategy
+			//NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
+			//refer to the project presentation and documentation for details
 
-	return NULL;
+			//change this "return" according to your answer
+			uint32 i=nextFit;
+			uint32 start=-1;
+
+			do{
+
+						if(KHEAP_ARR[i]==-1 )
+						{
+							if(start==-1)start=i;
+						if(start !=-1 && i+1-start==ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE)
+											{
+
+												struct Frame_Info* fptr=NULL;
+												for(uint32 j=start;j<=i;j++)
+												{
+													allocate_frame(&fptr);
+													if(fptr==NULL)
+													{ cprintf("\n no frame found for page, memory is FULL\n");
+														return NULL;
+													}
+													int res=map_frame(ptr_page_directory,fptr,(void*)((j*PAGE_SIZE)+KERNEL_HEAP_START), PERM_WRITEABLE);
+													if(res!=0)
+													{ 	cprintf("\n no frame found for page table, memory is FULL\n");
+														return NULL;
+													}
+												}
+												KHEAP_ARR[start]=i+1-start;
+												nextFit=(i+1)%KHEAP_ARR_SIZE;
+												return (void*)((start*PAGE_SIZE)+KERNEL_HEAP_START);
+											}
+						}
+						else
+						{
+							start=-1;
+								i=(i+KHEAP_ARR[i])%KHEAP_ARR_SIZE;
+								continue;
+
+						}
+						i++;
+						if(i==KHEAP_ARR_SIZE){
+							start=-1; i=0;
+						}
+			}while(i != nextFit);
+
+
+			return NULL;
 }
 
 void kfree(void* virtual_address)
