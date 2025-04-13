@@ -8,7 +8,6 @@ int KHEAP_ARR[KHEAP_ARR_SIZE];
  KHEAP_ARR Values
  Value = -1 -> Free space
  Value > 0 -> block_size(IN PAGES) taken by this page number
- Value = 0 -> taken but not the start of the block
  */
 
 int nextFit = 0;
@@ -56,10 +55,10 @@ void* kmalloc(unsigned int size)
 				}
 
 				KHEAP_ARR[start] = num_pages;
-				for(uint32 j = 1; j < num_pages; j++) {
+				/*for(uint32 j = 1; j < num_pages; j++) {
 					uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
 					KHEAP_ARR[page_index] = 0;
-				}
+				}*/
 				nextFit = (start + num_pages) % KHEAP_ARR_SIZE;
 
 				return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
@@ -119,7 +118,31 @@ void kfree(void* virtual_address)
 
 }
 
+
 unsigned int kheap_virtual_address(unsigned int physical_address)
+{
+    uint32 va = KERNEL_HEAP_START;
+    struct Frame_Info* ptr = NULL;
+    uint32* pt_ptr = NULL;
+    uint32 pa;
+
+    // Iterate over every page in the kernel heap.
+    while (va < KERNEL_HEAP_MAX) {
+        ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
+        if (ptr != NULL) {
+            pa = to_physical_address(ptr);
+            // Check if the given physical_address lies within this page.
+            if (physical_address >= pa && physical_address < pa + PAGE_SIZE) {
+                // Compute the offset within the page and return the corresponding virtual address.
+                return va + (physical_address - pa);
+            }
+        }
+        va += PAGE_SIZE;
+    }
+    return -1;
+}
+
+/*unsigned int kheap_virtual_address(unsigned int physical_address)
 {
 	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kheap_virtual_address()
 	// Write your code here, remove the panic and write your code
@@ -133,22 +156,20 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 	struct Frame_Info* ptr = NULL;
 	uint32* pt_ptr = NULL;
 	uint32 pa;
-	while(va != KERNEL_HEAP_MAX){
+	while(va < KERNEL_HEAP_MAX){
 		ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
 		if(ptr != NULL){
 			pa = to_physical_address(ptr);
 			if((pa >> 12) == (physical_address >> 12)){
-				va += (physical_address & 4095);
-				return va;
+				return va + (physical_address & (PAGE_SIZE - 1));
 			}
+
 		}
 		va += PAGE_SIZE;
 	}
-
-
 	return -1;
 }
-
+*/
 unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kheap_physical_address()
