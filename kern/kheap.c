@@ -14,7 +14,7 @@ int nextFit = 0;
 bool flag = 0;
 void* kmalloc(unsigned int size)
 {
-	//Initializing the array with -1 once
+	//Initializing the KHEAP_ARR with -1 once
 	if(flag == 0){
 		for(int i = 0; i < KHEAP_ARR_SIZE; i++){
 			KHEAP_ARR[i] = -1;
@@ -24,6 +24,11 @@ void* kmalloc(unsigned int size)
 
 	if(size == 0)
 		return NULL;
+
+	//i --> current index in the KHEAP_ARR
+	//start --> hold the start index of a free block
+	//count --> counts how many consecutive pages have been found
+	//limit --> counter to limit loops to one cycle and prevent infinite looping
 
 	uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 	uint32 i = nextFit;
@@ -53,14 +58,11 @@ void* kmalloc(unsigned int size)
 						return NULL;
 					}
 				}
-
+				//Update the start index with the number of pages this process was allocated
 				KHEAP_ARR[start] = num_pages;
-				/*for(uint32 j = 1; j < num_pages; j++) {
-					uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
-					KHEAP_ARR[page_index] = 0;
-				}*/
+				//Update nextFit
 				nextFit = (start + num_pages) % KHEAP_ARR_SIZE;
-
+				//return address
 				return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
 			}
 		}
@@ -111,47 +113,13 @@ void kfree(void* virtual_address)
            }
            unmap_frame(ptr_page_directory, (void*)address);
        }
-	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kfree()
-	// Write your code here, remove the panic and write your code
-	//you need to get the size of the given allocation using its address
-	//refer to the project presentation and documentation for details
 
 }
 
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-    uint32 va = KERNEL_HEAP_START;
-    struct Frame_Info* ptr = NULL;
-    uint32* pt_ptr = NULL;
-    uint32 pa;
 
-    // Iterate over every page in the kernel heap.
-    while (va < KERNEL_HEAP_MAX) {
-        ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
-        if (ptr != NULL) {
-            pa = to_physical_address(ptr);
-            // Check if the given physical_address lies within this page.
-            if (physical_address >= pa && physical_address < pa + PAGE_SIZE) {
-                // Compute the offset within the page and return the corresponding virtual address.
-                return va + (physical_address - pa);
-            }
-        }
-        va += PAGE_SIZE;
-    }
-    return -1;
-}
-
-/*unsigned int kheap_virtual_address(unsigned int physical_address)
-{
-	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kheap_virtual_address()
-	// Write your code here, remove the panic and write your code
-	//panic("kheap_virtual_address() is not implemented yet...!!");
-
-	//return the virtual address corresponding to given physical_address
-	//refer to the project presentation and documentation for details
-
-	//change this "return" according to your answer
 	uint32 va = KERNEL_HEAP_START;
 	struct Frame_Info* ptr = NULL;
 	uint32* pt_ptr = NULL;
@@ -167,19 +135,12 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 		}
 		va += PAGE_SIZE;
 	}
-	return -1;
+	return 0;
 }
-*/
+
 unsigned int kheap_physical_address(unsigned int virtual_address)
 {
-	//TODO: [PROJECT 2025 - MS1 - [1] Kernel Heap] kheap_physical_address()
-	// Write your code here, remove the panic and write your code
-	//panic("kheap_physical_address() is not implemented yet...!!");
 
-	//return the physical address corresponding to given virtual_address
-	//refer to the project presentation and documentation for details
-
-	//change this "return" according to your answer
 
 	uint32* page_table_ptr = NULL;
 
