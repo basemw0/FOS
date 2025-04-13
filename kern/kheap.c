@@ -12,9 +12,9 @@ int KHEAP_ARR[KHEAP_ARR_SIZE];
 
 int nextFit = 0;
 bool flag = 0;
-bool firstRun = 0;
-void* kmalloc(unsigned int size){
 
+void* kmalloc(unsigned int size){
+/* NextFit (Our Main)
 		//Initializing the KHEAP_ARR with -1 once
 		if(flag == 0){
 			for(int i = 0; i < KHEAP_ARR_SIZE; i++){
@@ -87,8 +87,138 @@ void* kmalloc(unsigned int size){
 		}
 
 		return NULL;
+*/
+
+/*	//Initializing the KHEAP_ARR with -1 once
+			if(flag == 0){
+				for(int i = 0; i < KHEAP_ARR_SIZE; i++){
+					KHEAP_ARR[i] = -1;
+				}
+				flag = 1;
+			}
+
+			if(size == 0)
+				return NULL;
+
+			//i --> current index in the KHEAP_ARR
+			//start --> hold the start index of a free block
+			//count --> counts how many consecutive pages have been found
+			//limit --> counter to limit loops to one cycle and prevent infinite looping
+			int firstFit =0;
+			uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+			uint32 i = 0;
+			uint32 start = -1;
+			uint32 count = 0;
 
 
+			while(i < KHEAP_ARR_SIZE) {
+				//Found empty place
+				if(KHEAP_ARR[i] == -1) {
+					if(start == -1)
+						start = i;
+					count++;
+					if(count == num_pages) {
+						for(uint32 j = 0; j < num_pages; j++) {
+							uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
+							struct Frame_Info* fptr = NULL;
+
+							allocate_frame(&fptr);
+							if(fptr == NULL) {
+								//No frame found because Memory is full
+								return NULL;
+							}
+							uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
+							int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
+							if(res != 0) {
+								return NULL;
+							}
+						}
+						//Update the start index with the number of pages this process was allocated
+						KHEAP_ARR[start] = num_pages;
+						//Update nextFit
+						firstFit = 0;
+						//return address
+						return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
+					}
+				}
+				else {
+					// if you hit an allocated block just skip it
+					if(KHEAP_ARR[i] > 0) {
+						i = (i + KHEAP_ARR[i]) % KHEAP_ARR_SIZE;
+					}
+					else {
+						i = (i + 1) % KHEAP_ARR_SIZE;
+					}
+					start = -1;
+					count = 0;
+					continue;
+				}
+
+				// Move to next slot
+				i = i + 1;
+			}
+
+			return NULL;
+*/
+
+/* WORSTFIT
+
+	int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	int i =0;
+	int worst =-1;
+	int worstStart =0;
+	int start =-1;
+	int count = 0;
+	while(i < KHEAP_ARR_SIZE){
+		if(KHEAP_ARR[i]==-1){
+			if (start == -1)
+				start = i;
+
+			while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){
+				count++;
+				i++;
+			}
+		if(count>worst) {
+			worst = count;
+			worstStart = start;
+			}
+		}
+		else if(KHEAP_ARR[i]>0){
+
+			i  += KHEAP_ARR[i] ;
+			start =-1;
+			count =0;
+			continue;
+			}
+		else{
+				i ++;
+			}
+		}
+
+	if(worst >= process_size){
+		for(uint32 j = 0; j < process_size; j++) {
+			uint32 page_index = worstStart + j;
+				struct Frame_Info* fptr = NULL;
+
+				allocate_frame(&fptr);
+				if(fptr == NULL) {
+					//No frame found because Memory is full
+					return NULL;
+				}
+				uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
+				int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
+				if(res != 0) {
+					return NULL;
+				}
+			}
+			//Update the start index with the number of pages this process was allocated
+			KHEAP_ARR[worstStart] = process_size;
+			//return address
+			return (void*)(KERNEL_HEAP_START + (worstStart * PAGE_SIZE));
+	}else{
+		return NULL;
+	}
+ */
 }
 
 void kfree(void* virtual_address)
