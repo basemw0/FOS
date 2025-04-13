@@ -71,7 +71,7 @@ void kfree(void* virtual_address)
 	uint32 page_number = (va - KERNEL_HEAP_START)/PAGE_SIZE;
 	uint32 block_size = KHEAP_ARR[page_number];
 	KHEAP_ARR[page_number] = -1;
-	for(uint32 address = va; address < address + block_size; address += PAGE_SIZE){
+	for(uint32 address = va; address < address + (block_size * PAGE_SIZE); address += PAGE_SIZE){
     struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, NULL);
     if (frame_info != NULL)
            {
