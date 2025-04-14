@@ -216,66 +216,66 @@ void* kmalloc(unsigned int size){
 	}
 
 	} else if(isKHeapPlacementStrategyBESTFIT()){
-		//process_size--> process size in pages
+	//process_size--> process size in pages
 	 //i --> current index in KHEAP_ARR
 	 //start --> start of the free block
 	 //VA --> start of the bestfit
 	 //pagecounter --> number of consecutive free pages
 	 //bestfit --> least number of pages fitting my need currently
-	int process_size , i , start , VA ,pageCounter , BestFit;
-	process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-	i = 0;
-	start = -1;
-	VA = -1;
-	pageCounter = 0;
-	BestFit = KHEAP_ARR_SIZE+1;
-	while(i<KHEAP_ARR_SIZE){
-		if(KHEAP_ARR[i] == -1&& start == -1) start = i;
-		else if (KHEAP_ARR[i] != -1 ){
-			if(start!= -1){
-			if(pageCounter >= process_size && pageCounter < BestFit){
-					BestFit = pageCounter;
-					VA = start;
-
-			}}
-			i+=KHEAP_ARR[i];
-			start = -1;
-			pageCounter = 0 ;
-			continue;
-
-		}
-		i++;
-		pageCounter++;
-
-	}
-	if(start!=-1){
-				if(pageCounter >= process_size && pageCounter < BestFit){
-						BestFit = pageCounter;
-						VA = start;
-
-				}
-			}
-	if(VA!=-1){
-	    struct Frame_Info* fptr=NULL;
-	    for(uint32 j=VA;j<VA + process_size;j++)
-	    {
-	        allocate_frame(&fptr);
-	        if(fptr==NULL)
-	        {
-	            cprintf("\n no frame found for page, memory is FULL\n");
-	            return NULL;
-	        }
-	        int res=map_frame(ptr_page_directory,fptr,(void*)((j*PAGE_SIZE) + KERNEL_HEAP_START), PERM_WRITEABLE);
-	        if(res!=0)
-	        {
-	            cprintf("\n no frame found for page table, memory is FULL\n");
-	            return NULL;
-	        }
-	    }
-	    KHEAP_ARR[VA]=process_size;
-	    return (void*)((VA*PAGE_SIZE)+KERNEL_HEAP_START);
-	}
-	return NULL;
+	 int process_size , i , start , VA ,pageCounter , BestFit;
+	 process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	 i = 0;
+	 start = -1;
+	 VA = -1;
+	 pageCounter = 0;
+	 BestFit = KHEAP_ARR_SIZE+1;
+	 while(i<KHEAP_ARR_SIZE){
+		 if(KHEAP_ARR[i] == -1&& start == -1) start = i;
+		 else if (KHEAP_ARR[i] != -1 ){
+			 if(start!= -1){
+			 if(pageCounter >= process_size && pageCounter < BestFit){
+					 BestFit = pageCounter;
+					 VA = start;
+ 
+			 }}
+			 i+=KHEAP_ARR[i];
+			 start = -1;
+			 pageCounter = 0 ;
+			 continue;
+ 
+		 }
+		 i++;
+		 pageCounter++;
+ 
+	 }
+	 if(start!=-1){
+				 if(pageCounter >= process_size && pageCounter < BestFit){
+						 BestFit = pageCounter;
+						 VA = start;
+ 
+				 }
+			 }
+	 if(VA!=-1){
+		 struct Frame_Info* fptr=NULL;
+		 for(uint32 j=VA;j<VA + process_size;j++)
+		 {
+			 allocate_frame(&fptr);
+			 if(fptr==NULL)
+			 {
+				 cprintf("\n no frame found for page, memory is FULL\n");
+				 return NULL;
+			 }
+			 int res=map_frame(ptr_page_directory,fptr,(void*)((j*PAGE_SIZE) + KERNEL_HEAP_START), PERM_WRITEABLE);
+			 if(res!=0)
+			 {
+				 cprintf("\n no frame found for page table, memory is FULL\n");
+				 return NULL;
+			 }
+		 }
+		 KHEAP_ARR[VA]=process_size;
+		 return (void*)((VA*PAGE_SIZE)+KERNEL_HEAP_START);
+	 }
+	 return NULL;
 }
 
 
