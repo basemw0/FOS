@@ -216,63 +216,66 @@ void* kmalloc(unsigned int size){
 	}
 
 	} else if(isKHeapPlacementStrategyBESTFIT()){
-		int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-			int i =0;
-			int best = KHEAP_ARR_SIZE+1;
-			int bestStart =-1;
-			int start =-1;
-			int count = 0;
-			while(i < KHEAP_ARR_SIZE){
-				if(KHEAP_ARR[i]==-1){
-					if (start == -1)
-						start = i;
+		//process_size--> process size in pages
+	 //i --> current index in KHEAP_ARR
+	 //start --> start of the free block
+	 //VA --> start of the bestfit
+	 //pagecounter --> number of consecutive free pages
+	 //bestfit --> least number of pages fitting my need currently
+	int process_size , i , start , VA ,pageCounter , BestFit;
+	process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	i = 0;
+	start = -1;
+	VA = -1;
+	pageCounter = 0;
+	BestFit = KHEAP_ARR_SIZE+1;
+	while(i<KHEAP_ARR_SIZE){
+		if(KHEAP_ARR[i] == -1&& start == -1) start = i;
+		else if (KHEAP_ARR[i] != -1 ){
+			if(start!= -1){
+			if(pageCounter >= process_size && pageCounter < BestFit){
+					BestFit = pageCounter;
+					VA = start;
 
-					while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){
-						count++;
-						i++;
-					}
-				if(count >= process_size && count < best) {
-					best = count;
-					bestStart = start;
-					}
-				}
-				else if(KHEAP_ARR[i]>0){
+			}}
+			i+=KHEAP_ARR[i];
+			start = -1;
+			pageCounter = 0 ;
+			continue;
 
-					i  += KHEAP_ARR[i] ;
-					start =-1;
-					count =0;
-					continue;
-					}
-				else{
-						i ++;
-					}
-				}
+		}
+		i++;
+		pageCounter++;
 
-			if(best >= process_size){
-				for(uint32 j = 0; j < process_size; j++) {
-					uint32 page_index = bestStart + j;
-						struct Frame_Info* fptr = NULL;
-
-						allocate_frame(&fptr);
-						if(fptr == NULL) {
-							//No frame found because Memory is full
-							return NULL;
-						}
-						uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
-						int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
-						if(res != 0) {
-							return NULL;
-						}
-					}
-					//Update the start index with the number of pages this process was allocated
-					KHEAP_ARR[bestStart] = process_size;
-					//return address
-					return (void*)(KERNEL_HEAP_START + (bestStart * PAGE_SIZE));
-			}else{
-				return NULL;
-			}
 	}
-return NULL;
+	if(start!=-1){
+				if(pageCounter >= process_size && pageCounter < BestFit){
+						BestFit = pageCounter;
+						VA = start;
+
+				}
+			}
+	if(VA!=-1){
+	    struct Frame_Info* fptr=NULL;
+	    for(uint32 j=VA;j<VA + process_size;j++)
+	    {
+	        allocate_frame(&fptr);
+	        if(fptr==NULL)
+	        {
+	            cprintf("\n no frame found for page, memory is FULL\n");
+	            return NULL;
+	        }
+	        int res=map_frame(ptr_page_directory,fptr,(void*)((j*PAGE_SIZE) + KERNEL_HEAP_START), PERM_WRITEABLE);
+	        if(res!=0)
+	        {
+	            cprintf("\n no frame found for page table, memory is FULL\n");
+	            return NULL;
+	        }
+	    }
+	    KHEAP_ARR[VA]=process_size;
+	    return (void*)((VA*PAGE_SIZE)+KERNEL_HEAP_START);
+	}
+	return NULL;
 }
 
 
