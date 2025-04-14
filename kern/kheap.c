@@ -307,23 +307,32 @@ void kfree(void* virtual_address)
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
+	physical_address =ROUNDDOWN(physical_address,PAGE_SIZE);
+    for (int i = 0; i < KHEAP_ARR_SIZE; i++) {
+        if (KHEAP_ARR[i] == -1) {
+            continue;
+        }
 
-	uint32 va = KERNEL_HEAP_START;
-	struct Frame_Info* ptr = NULL;
-	uint32* pt_ptr = NULL;
-	uint32 pa;
-	while(va < KERNEL_HEAP_MAX){
-		ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
-		if(ptr != NULL){
-			pa = to_physical_address(ptr);
-			if((pa >> 12) == (physical_address >> 12)){
-				return va + (physical_address & (PAGE_SIZE - 1));
-			}
+        int block_size = KHEAP_ARR[i];
+        for (int j = 0; j < block_size; j++) {
+            uint32 va = KERNEL_HEAP_START + (i + j) * PAGE_SIZE;
 
-		}
-		va += PAGE_SIZE;
-	}
-	return 0;
+            struct Frame_Info* ptr = NULL;
+            uint32* pt_ptr = NULL;
+            ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
+
+            if (ptr != NULL) {
+                uint32 pa = to_physical_address(ptr);
+                if (pa == physical_address) {
+                    return va + (physical_address & (PAGE_SIZE - 1));
+                }
+            }
+        }
+
+        i += block_size - 1;
+    }
+
+    return 0;
 }
 
 unsigned int kheap_physical_address(unsigned int virtual_address)
