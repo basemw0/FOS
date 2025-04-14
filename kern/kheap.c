@@ -11,22 +11,25 @@ int KHEAP_ARR[KHEAP_ARR_SIZE];
  */
 
 int nextFit = 0;
-bool flag = 0;
+bool initializeFlag = 0;
+int callCount =0;
 
 void* kmalloc(unsigned int size){
-
 		//Initializing the KHEAP_ARR with -1 once
-		if(flag == 0){
+		if(initializeFlag == 0){
 			for(int i = 0; i < KHEAP_ARR_SIZE; i++){
 				KHEAP_ARR[i] = -1;
 			}
-			flag = 1;
+			initializeFlag = 1;
 		}
 
 		if(size == 0)
 			return NULL;
 
-/* NextFit (Our Main)
+		if(callCount < 4 || isKHeapPlacementStrategyNEXTFIT()){
+			callCount++;
+
+/* NextFit (Our Main) */
 		//i --> current index in the KHEAP_ARR
 		//start --> hold the start index of a free block
 		//count --> counts how many consecutive pages have been found
@@ -88,10 +91,10 @@ void* kmalloc(unsigned int size){
 		}
 
 		return NULL;
-*/
 
+		}else if(isKHeapPlacementStrategyFIRSTFIT()){
 
-/* FirstFit
+/* FirstFit*/
 
 			if(size == 0)
 				return NULL;
@@ -151,9 +154,9 @@ void* kmalloc(unsigned int size){
 			}
 
 			return NULL;
-*/
+		}else if(isKHeapPlacementStrategyWORSTFIT()){
 
-/* WORSTFIT / BESTFIT (change the lines with the corresponding comments to get BestFit)
+/* WORSTFIT / BESTFIT (change the lines with the corresponding comments to get BestFit) */
 
 	int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	int i =0;
@@ -211,7 +214,65 @@ void* kmalloc(unsigned int size){
 	}else{
 		return NULL;
 	}
-*/
+
+	} else if(isKHeapPlacementStrategyBESTFIT()){
+		int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+			int i =0;
+			int best = KHEAP_ARR_SIZE+1;
+			int bestStart =-1;
+			int start =-1;
+			int count = 0;
+			while(i < KHEAP_ARR_SIZE){
+				if(KHEAP_ARR[i]==-1){
+					if (start == -1)
+						start = i;
+
+					while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){
+						count++;
+						i++;
+					}
+				if(count >= process_size && count < best) {
+					best = count;
+					bestStart = start;
+					}
+				}
+				else if(KHEAP_ARR[i]>0){
+
+					i  += KHEAP_ARR[i] ;
+					start =-1;
+					count =0;
+					continue;
+					}
+				else{
+						i ++;
+					}
+				}
+
+			if(best >= process_size){
+				for(uint32 j = 0; j < process_size; j++) {
+					uint32 page_index = bestStart + j;
+						struct Frame_Info* fptr = NULL;
+
+						allocate_frame(&fptr);
+						if(fptr == NULL) {
+							//No frame found because Memory is full
+							return NULL;
+						}
+						uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
+						int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
+						if(res != 0) {
+							return NULL;
+						}
+					}
+					//Update the start index with the number of pages this process was allocated
+					KHEAP_ARR[bestStart] = process_size;
+					//return address
+					return (void*)(KERNEL_HEAP_START + (bestStart * PAGE_SIZE));
+			}else{
+				return NULL;
+			}
+	}
+return NULL;
 }
 
 

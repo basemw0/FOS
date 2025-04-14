@@ -1075,17 +1075,9 @@ int command_get_modified_buffer_length(int number_of_arguments, char **arguments
 int command_test_kmalloc(int number_of_arguments, char **arguments)
 {
 	int testNum = 0 ;
-	if (number_of_arguments>=2 ){
+	if (number_of_arguments==2 )
 		testNum = strtol(arguments[1], NULL, 10);
-		if(number_of_arguments == 3){
-			AllocationChoice = arguments[2][0];
-			if (AllocationChoice != 'F' && AllocationChoice != 'N' && AllocationChoice != 'B' && AllocationChoice != 'W')
-				{
-					cprintf("Choose your fitting strategy to test: F | N | B | W");
-					return 0;
-				}
-		}
-	}
+
 
 
 	if (isKHeapPlacementStrategyNEXTFIT())
