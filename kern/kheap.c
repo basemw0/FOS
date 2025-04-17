@@ -61,6 +61,7 @@ void* kmalloc(unsigned int size){
 													{ 	cprintf("\n no frame found for page table, memory is FULL\n");
 														return NULL;
 													}
+													fptr->va = (j*PAGE_SIZE)+KERNEL_HEAP_START;
 												}
 												KHEAP_ARR[start]=i+1-start;//setting the start frame in the array with the number of frames used after it
 												nextFit=(i+1)%KHEAP_ARR_SIZE;//setting the nextfit ptr to the next frame after the last one we have allocated
