@@ -15,7 +15,7 @@ bool initializeFlag = 0;
 int callCount =0;
 
 void* kmalloc(unsigned int size){
-		//Initializing the KHEAP_ARR with -1 once
+		//Initializing once the KHEAp array values to -1 which means that this frame is free
 		if(initializeFlag == 0){
 			for(int i = 0; i < KHEAP_ARR_SIZE; i++){
 				KHEAP_ARR[i] = -1;
@@ -35,65 +35,53 @@ void* kmalloc(unsigned int size){
 		//count --> counts how many consecutive pages have been found
 		//limit --> counter to limit loops to one cycle and prevent infinite looping
 
-		uint32 num_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
-		uint32 i = nextFit;
-		uint32 start = -1;
-		uint32 count = 0;
+			uint32 i=nextFit;//start searching from where we have ended the last allocation
+			uint32 start=-1;//holds a possible  frame that will be the start of our allocation
 
-		uint32 limit = 0;
-		while(limit < KHEAP_ARR_SIZE) {
-			//Found empty place
-			if(KHEAP_ARR[i] == -1) {
-				if(start == -1)
-					start = i;
-				count++;
-				if(count == num_pages) {
-					for(uint32 j = 0; j < num_pages; j++) {
-						uint32 page_index = (start + j) % KHEAP_ARR_SIZE;
-						struct Frame_Info* fptr = NULL;
+			do{
 
-						allocate_frame(&fptr);
-						if(fptr == NULL) {
-							//No frame found because Memory is full
-							return NULL;
+						if(KHEAP_ARR[i]==-1 )//free frame
+						{
+							if(start==-1)start=i;//if we were not already holding a start
+												//make this frame the start that we are going to count from
+						if(start !=-1 && i+1-start==ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE)//if there was a start and we have reached
+																					 //the desired # of frames
+											{
+
+												struct Frame_Info* fptr=NULL;
+												for(uint32 j=start;j<=i;j++)//allocating each frame
+												{
+													allocate_frame(&fptr);
+													if(fptr==NULL)
+													{ cprintf("\n no frame found for page, memory is FULL\n");
+														return NULL;
+													}
+													int res=map_frame(ptr_page_directory,fptr,(void*)((j*PAGE_SIZE)+KERNEL_HEAP_START), PERM_WRITEABLE);
+													if(res!=0)
+													{ 	cprintf("\n no frame found for page table, memory is FULL\n");
+														return NULL;
+													}
+												}
+												KHEAP_ARR[start]=i+1-start;//setting the start frame in the array with the number of frames used after it
+												nextFit=(i+1)%KHEAP_ARR_SIZE;//setting the nextfit ptr to the next frame after the last one we have allocated
+												return (void*)((start*PAGE_SIZE)+KERNEL_HEAP_START);//return virtual address of the start frame
+											}
 						}
+						else//if the frame is full
+						{
+							start=-1;//reset the start to find another free space
+								i=(i+KHEAP_ARR[i])%KHEAP_ARR_SIZE;//jump to the next possible free frame
+								continue;
 
-						uint32 va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
-						int res = map_frame(ptr_page_directory, fptr, (void*)va, PERM_WRITEABLE);
-						if(res != 0) {
-							return NULL;
 						}
-						fptr->va = KERNEL_HEAP_START + (page_index * PAGE_SIZE);
-					}
-					//Update the start index with the number of pages this process was allocated
-					KHEAP_ARR[start] = num_pages;
-					//Update nextFit
-					nextFit = (start + num_pages) % KHEAP_ARR_SIZE;
-					//return address
-					return (void*)(KERNEL_HEAP_START + (start * PAGE_SIZE));
-				}
-			}
-			else {
-				// if you hit an allocated block just skip it
-				if(KHEAP_ARR[i] > 0) {
-					i = (i + KHEAP_ARR[i]) % KHEAP_ARR_SIZE;
-				}
-				else {
-					i = (i + 1) % KHEAP_ARR_SIZE;
-				}
-				start = -1;
-				count = 0;
-				limit++;
-				continue;
-			}
+						i++;
+						if(i==KHEAP_ARR_SIZE){//if the kheap has ended and we have not reached our start (nextfit)
+							start=-1; i=0;//start from the beginning of the kheap and reset the start to find another free space
+						}
+			}while(i != nextFit);//continue until checking every frame possible
 
-			// Move to next slot
-			i = (i + 1) % KHEAP_ARR_SIZE;
-			limit++;
-		}
 
-		return NULL;
-
+			return NULL;
 		}else if(isKHeapPlacementStrategyFIRSTFIT()){
 
 /* FirstFit*/
@@ -236,18 +224,18 @@ void* kmalloc(unsigned int size){
 	 VA = -1; // initialize to -1 , since we still dont know if there is space for the allocation
 	 pageCounter = 0;
 	 BestFit = KHEAP_ARR_SIZE+1; // initialize to a num greater than the heap size to allow comparision
-	 while(i<KHEAP_ARR_SIZE){ 
+	 while(i<KHEAP_ARR_SIZE){
 		//If we dont have a start currently and the page we are on is free set the start to that page number
-		 if(KHEAP_ARR[i] == -1&& start == -1) start = i; 
+		 if(KHEAP_ARR[i] == -1&& start == -1) start = i;
 		 // if we hit a block that is allocated check if we had a start we will compare to see how many pages were free up to that point , if it is suitable for our process and better than the best fit we update Bestfit and VA.
-		 else if (KHEAP_ARR[i] != -1 ){ 
+		 else if (KHEAP_ARR[i] != -1 ){
 			 if(start!= -1){
 			 if(pageCounter >= process_size && pageCounter < BestFit){
 					 BestFit = pageCounter;
 					 VA = start;
 
 			 }}
-			 //Jump the allocated block 
+			 //Jump the allocated block
 			 i+=KHEAP_ARR[i];
 			 start = -1;
 			 pageCounter = 0 ;
@@ -288,7 +276,7 @@ void* kmalloc(unsigned int size){
 			 fptr->va = (j*PAGE_SIZE) + KERNEL_HEAP_START; //this line here is to make the lookup process in the physical to vitrual function O(1)
 		 }
 		 //Update our array and return the VA
-		 KHEAP_ARR[VA]=process_size; 
+		 KHEAP_ARR[VA]=process_size;
 		 return (void*)((VA*PAGE_SIZE)+KERNEL_HEAP_START);
 	 }
 	 return NULL;
@@ -328,7 +316,7 @@ void kfree(void* virtual_address)
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-	//This is our previous O(n) solution 
+	//This is our previous O(n) solution
 	// physical_address =ROUNDDOWN(physical_address,PAGE_SIZE);
     // for (int i = 0; i < KHEAP_ARR_SIZE; i++) {
     //     if (KHEAP_ARR[i] == -1) {
