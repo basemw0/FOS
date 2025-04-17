@@ -8,7 +8,7 @@ int KHEAP_ARR[KHEAP_ARR_SIZE];
  KHEAP_ARR Values
  Value = -1 -> Free space
  Value > 0 -> block_size(IN PAGES) taken by this page number
- */
+*/
 
 int nextFit = 0;
 bool initializeFlag = 0;
@@ -87,9 +87,6 @@ void* kmalloc(unsigned int size){
 
 /* FirstFit*/
 
-			if(size == 0)
-				return NULL;
-
 			//i --> current index in the KHEAP_ARR
 			//start --> hold the start index of a free block
 			//count --> counts how many consecutive pages have been found
@@ -151,9 +148,16 @@ void* kmalloc(unsigned int size){
 
 /* WORSTFIT / BESTFIT (change the lines with the corresponding comments to get BestFit) */
 
+		//process_size -> input size of process rounded to nearest page
+		/*	i-> iterator over the heap
+			start-> points to a possible start(free space) for allocation when iterating
+			worstStart-> our final Start
+			worst-> stores the size of the current worst fit of the process
+			count-> counts pages that are free
+		*/
 	int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	int i =0;
-	int worst =-1;       //KHEAP_ARR_SIZE+1;
+	int worst =-1;
 	int worstStart =-1;
 	int start =-1;
 	int count = 0;
@@ -162,29 +166,26 @@ void* kmalloc(unsigned int size){
 			if (start == -1)
 				start = i;
 
-			while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){
+			while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){//count the number of free consecutive pages
 				count++;
 				i++;
 			}
-		//if(count >= process_size && count < worst) {
-			if(count>worst){
-			worst = count;
-			worstStart = start;
+			if(count>worst){//if current count > the largest num of pages found
+			worst = count; //replace worst with current count
+			worstStart = start; //update worstStart with current start index
 			}
 		}
-		else if(KHEAP_ARR[i]>0){
+		//Jump the allocated block
+		else {
 
 			i  += KHEAP_ARR[i] ;
 			start =-1;
-			count =0;
+			count =0; //reset start and count
 			continue;
-			}
-		else{
-				i ++;
 			}
 		}
 
-	if(worst >= process_size){
+	if(worst >= process_size){ //check if the largest available slot is larger than the process_size
 		for(uint32 j = 0; j < process_size; j++) {
 			uint32 page_index = worstStart + j;
 				struct Frame_Info* fptr = NULL;
@@ -200,7 +201,7 @@ void* kmalloc(unsigned int size){
 				if(res != 0) {
 					return NULL;
 				}
-				fptr->va = j*PAGE_SIZE + KERNEL_HEAP_START;
+				fptr->va = va;
 			}
 			//Update the start index with the number of pages this process was allocated
 			KHEAP_ARR[worstStart] = process_size;
@@ -212,12 +213,13 @@ void* kmalloc(unsigned int size){
 
 	} else if(isKHeapPlacementStrategyBESTFIT()){
 		//BESFT FIT STRATEGY
-		//process_sise -> input size of process rounded to nearest page
-		//i-> iterator over the heap
-		//start-> points to a possible start for allocation when iterating
-		//VA-> our final Start
-		//pageCounter-> counts pages that are free
-		//BestFit-> stores the size of the current best fit of the process
+		/*	process_size -> input size of process rounded to nearest page
+			i-> iterator over the heap
+			start-> points to a possible start for allocation when iterating
+			VA-> our final Start
+			pageCounter-> counts pages that are free
+			BestFit-> stores the size of the current best fit of the process
+		*/
 	 int process_size , i , start , VA ,pageCounter , BestFit;
 	 process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	 i = 0;
@@ -288,28 +290,39 @@ void* kmalloc(unsigned int size){
 
 void kfree(void* virtual_address)
 {
+	//check if virtual address is within the kheap boundary
 	if ((uint32)virtual_address < KERNEL_HEAP_START || (uint32)virtual_address >= KERNEL_HEAP_MAX)
 	        return;
-
+	//store the given virtual address in an unsigned 32 bit integer
 	uint32 va = (uint32)virtual_address;
+	//get the index of the virtual address in theKHEAP_ARR
 	uint32 page_number = (va - KERNEL_HEAP_START)/PAGE_SIZE;
 
+	//check if the given virtual address is already free
 	if (KHEAP_ARR[page_number] == -1)
 		        return;
 
+	//else if the given virtual address is valid extract the block_size (in page numbers)
 	uint32 block_size = KHEAP_ARR[page_number];
+
+	//get the upper bound for the virtual address to free
 	uint32 end_address = va + (block_size * PAGE_SIZE);
+
+	//used in the get_frame_info to store a pointer to the page table of the current virtual address
 	uint32 * ptr_page = NULL;
-	for(int i =0;i<block_size;i++){
-		KHEAP_ARR[page_number+i] = -1;
-	}
+
+	//Reset the start of the virtual address block by -1(free)
+	KHEAP_ARR[page_number] = -1;
+
+	//loop from the start of the va until the end of the block size while adding 4KB (PAGE_SIZE) after each iteration
 	for (uint32 address = va; address < end_address ;address += PAGE_SIZE ) {
-	        struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, &ptr_page);
-	        if (frame_info != NULL)
+	        struct Frame_Info* frame_info = get_frame_info(ptr_page_directory, (void*)address, &ptr_page); //define a struct of Frame_Info
+	        																							//Extract the frame info of the current address using get_frame_info
+	        if (frame_info != NULL)//if frame exists
            {
-               free_frame(frame_info);
+               free_frame(frame_info);//add the frame to the free frame list
            }
-           unmap_frame(ptr_page_directory, (void*)address);
+           unmap_frame(ptr_page_directory, (void*)address);//delete the page table entry that maps to the frame
        }
 
 }
@@ -318,32 +331,33 @@ void kfree(void* virtual_address)
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
 	//This is our previous O(n) solution
-	// physical_address =ROUNDDOWN(physical_address,PAGE_SIZE);
-    // for (int i = 0; i < KHEAP_ARR_SIZE; i++) {
-    //     if (KHEAP_ARR[i] == -1) {
-    //         continue;
-    //     }
+	/* physical_address =ROUNDDOWN(physical_address,PAGE_SIZE);
+     for (int i = 0; i < KHEAP_ARR_SIZE; i++) {
+         if (KHEAP_ARR[i] == -1) {
+             continue;
+         }
 
-    //     int block_size = KHEAP_ARR[i];
-    //     for (int j = 0; j < block_size; j++) {
-    //         uint32 va = KERNEL_HEAP_START + (i + j) * PAGE_SIZE;
+         int block_size = KHEAP_ARR[i];
+         for (int j = 0; j < block_size; j++) {
+             uint32 va = KERNEL_HEAP_START + (i + j) * PAGE_SIZE;
 
-    //         struct Frame_Info* ptr = NULL;
-    //         uint32* pt_ptr = NULL;
-    //         ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
+             struct Frame_Info* ptr = NULL;
+             uint32* pt_ptr = NULL;
+             ptr = get_frame_info(ptr_page_directory, (void*)va, &pt_ptr);
 
-    //         if (ptr != NULL) {
-    //             uint32 pa = to_physical_address(ptr);
-    //             if (pa == physical_address) {
-    //                 return va + (physical_address & (PAGE_SIZE - 1));
-    //             }
-    //         }
-    //     }
+             if (ptr != NULL) {
+                 uint32 pa = to_physical_address(ptr);
+                 if (pa == physical_address) {
+                     return va + (physical_address & (PAGE_SIZE - 1));
+                 }
+             }
+         }
 
-    //     i += block_size - 1;
-    // }
+         i += block_size - 1;
+     }
 
-    // return 0;
+     return 0;
+     */
 
 	//Here we use the property va that we set in the frame_info struct while allocating to find the va of a the given physical address, turn it into a frame number , get the page number(va) , then add back the offset
 	struct Frame_Info* ptr = NULL;
