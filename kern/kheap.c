@@ -146,10 +146,11 @@ void* kmalloc(unsigned int size){
 			return NULL;
 		}else if(isKHeapPlacementStrategyWORSTFIT()){
 
-/* WORSTFIT / BESTFIT (change the lines with the corresponding comments to get BestFit) */
+/* WORSTFIT */
 
-		//process_size -> input size of process rounded to nearest page
-		/*	i-> iterator over the heap
+		/*
+			process_size -> input size of process rounded to nearest page
+			i-> iterator over the heap
 			start-> points to a possible start(free space) for allocation when iterating
 			worstStart-> our final Start
 			worst-> stores the size of the current worst fit of the process
