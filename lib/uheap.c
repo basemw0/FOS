@@ -18,6 +18,7 @@
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
 
+int UHEAP_ARR[USER_ARR_SIZE];
 void* malloc(uint32 size)
 {
 	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] malloc() [User Side]
@@ -55,12 +56,12 @@ void* malloc(uint32 size)
 		int worstStart =-1;
 		int start =-1;
 		int count = 0;
-		while(i < KHEAP_ARR_SIZE){
-			if(KHEAP_ARR[i]==-1){
+		while(i < USER_ARR_SIZE){
+			if(UHEAP_ARR[i]==-1){
 				if (start == -1)
 					start = i;
 
-				while(i <KHEAP_ARR_SIZE && KHEAP_ARR[i]== -1){//count the number of free consecutive pages
+				while(i <USER_ARR_SIZE && UHEAP_ARR[i]== -1){//count the number of free consecutive pages
 					count++;
 					i++;
 				}
@@ -72,7 +73,7 @@ void* malloc(uint32 size)
 			//Jump the allocated block
 			else {
 
-				i  += KHEAP_ARR[i] ;
+				i  += UHEAP_ARR[i] ;
 				start =-1;
 				count =0; //reset start and count
 				continue;
