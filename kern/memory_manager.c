@@ -830,7 +830,7 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 			{
 				if(page_table != NULL)
 				{
-					uint32 x= pd_is_table_used(Env* ptr_environment, uint32 virtual_address);
+					uint32 x=0;
 					for(uint32 i=0;i<PAGE_SIZE;i++)
 					{
 						if((*page_table)[i] != NULL)
@@ -849,9 +849,8 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 
 			}
 
-			pf_remove_env_page(e,myPage);
-
-
+			pf_remove_env_page(e,myPage );
+			//COULD BE A MAJOR ISSUE INSHALLA LA
 		}
 		uint32 x=0;
 		for(uint32 i=0;i<PAGE_SIZE;i++)
