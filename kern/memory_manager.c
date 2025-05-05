@@ -767,8 +767,15 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] allocateMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
-	panic("allocateMem() is not implemented yet...!!");
-
+	//panic("allocateMem() is not implemented yet...!!");
+	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	for(uint32 j=0;j<=noPages;j++)
+	{
+	int ret = pf_add_empty_env_page(e, (j*PAGE_SIZE)+virtual_address, 0);
+	if (ret == E_NO_PAGE_FILE_SPACE){
+		panic("ERROR: No enough virtual space on the page file");
+	}
+	}
 	//This function should allocate ALL pages of the required range in the PAGE FILE
 	//and allocate NOTHING in the main memory
 }
@@ -785,7 +792,80 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 {
 	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] freeMem() [Kernel Side]
 	// Write your code here, remove the panic and write your code
-	panic("__freeMem_with_buffering() is not implemented yet...!!");
+	//panic("__freeMem_with_buffering() is not implemented yet...!!");
+	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	uint32 *page_table=NULL;
+		for(uint32 j=0;j<=noPages;j++)
+		{
+			uint32 myPage=(j*PAGE_SIZE)+virtual_address;
+			uint32 *ptr_page_table;
+			struct Frame_Info* myFrame=get_frame_info(ptr_page_directory,myPage,&ptr_page_table);
+			if(myFrame->isBuffered !=0)
+			{
+				uint32 page_permissions = pt_get_page_permissions(e, myPage);
+				if(page_permissions & PERM_MODIFIED)
+				{
+					bufferlist_remove_page(&modified_frame_list, myFrame);
+				}
+				else{
+					bufferlist_remove_page(&free_frame_list, myFrame);
+					LIST_INSERT_HEAD(&free_frame_list, myFrame);//may have a problem
+				}
+				myFrame->isBuffered=0;
+				myFrame->environment=NULL;
+			}
+			for(uint32 i=0;i<e->page_WS_max_size;i++)
+			{	if( env_page_ws_is_entry_empty(e,i)==0)
+				{
+					if(e->ptr_pageWorkingSet[i].virtual_address==myPage)
+					{
+						env_page_ws_clear_entry( e, i);
+						break;
+					}
+				}
+			}
+
+			pt_clear_page_table_entry(e, myPage);
+			if(page_table!=ptr_page_table)
+			{
+				if(page_table != NULL)
+				{
+					uint32 x=0;
+					for(uint32 i=0;i<PAGE_SIZE;i++)
+					{
+						if((*page_table)[i] != NULL)
+						{
+							x=1;
+							break;
+						}
+					}
+					if(x==0)
+					{
+						 pd_clear_page_dir_entry(e,myPage-PAGE_SIZE );
+					}
+
+				}
+				page_table=ptr_page_table;
+
+			}
+
+			pf_remove_env_page(e,myPage );
+
+
+		}
+		uint32 x=0;
+		for(uint32 i=0;i<PAGE_SIZE;i++)
+		{
+			if((*page_table)[i] != NULL)
+			{
+				x=1;
+				break;
+			}
+		}
+		if(x==0)
+		{
+			 pd_clear_page_dir_entry(e,virtual_address+PAGE_SIZE*noPages);
+		}
 
 	//This function should:
 	//1. Free ALL pages of the given range from the Page File
@@ -794,7 +874,9 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 	//4. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
 
 	//Refer to the project presentation and documentation for details
+
 }
+
 
 //================= [BONUS] =====================
 // [3] moveMem
