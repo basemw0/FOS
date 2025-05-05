@@ -795,7 +795,7 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 	//panic("__freeMem_with_buffering() is not implemented yet...!!");
 	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	uint32 *page_table=NULL;
-		for(uint32 j=0;j<=noPages;j++)
+		for(uint32 j=0;j<noPages;j++)
 		{
 			uint32 myPage=(j*PAGE_SIZE)+virtual_address;
 			uint32 *ptr_page_table;
