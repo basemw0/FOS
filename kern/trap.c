@@ -443,59 +443,164 @@ void page_fault_handler(struct Env * curenv, uint32 fault_va)
 }
 void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 {
-    //TODO: [PROJECT 2025 - MS2 - [3] Page Fault Handler: PLACEMENT & REPLACEMENT CASES]
-    // Write your code here, remove the panic and write your code
-    //panic("page_fault_handler_with_buffering() is not implemented yet...!!");
-    //refer to the project documentation for the detailed steps of the page fault handler
-    unsigned int maxSize = curenv->page_WS_max_size;
-    uint32 nOfPagesLoaded = env_page_ws_get_size(curenv);
-    uint32 * ptrPageTable = NULL;
-    //Placement
-    if(nOfPagesLoaded < maxSize){
-        uint32 perms = pt_get_page_permissions(curenv, fault_va);
-        if(perms & PERM_BUFFERED){
-            //Updating the permisions and the working set
-            pt_set_page_permissions(curenv, fault_va,PERM_PRESENT ,PERM_BUFFERED);
-            //Get the frame to remove from modd list or free frame list
-            struct Frame_Info * frame = get_frame_info(ptr_page_directory,fault_va,&ptrPageTable);
-            if(perms & PERM_MODIFIED){
-                bufferlist_remove_page(&modified_frame_list, frame);
-            }
-            else{
-                bufferlist_remove_page(&free_frame_list, frame);
-            }
-            frame->isBuffered = 0;
-        }
-        //Page is not buffered
-        else{
-            //Allocate and map a frame to the given va
-            struct Frame_Info * fptr = NULL;
-            allocateFrame(&fptr);
-            int res = map_frame(ptr_page_directory,fptr,fault_va,PERM_WRITEABLE); // Check if we need to set used bit
-            if(res == 0){
-                res = pf_read_env_page(curenv, fault_va);
-                if(res!= 0){
-                    if(fault_va >= ptr_stack_bottom && fault_va <= ptr_stack_top){
-                        res = pf_add_empty_env_page( curenv, fault_va, 1);
-                        if(res!=0) panic("AHHHHHHH");
-                    }
-                    else{
-                        panic("INVALID ADDRESS");
-                    }
-                }
-            }
-            else{
-                panic("AHHHHHHHH");
-            }
-        }
-        //Updating working set
-        env_page_ws_set_entry(curenv, curenv->page_last_WS_index, fault_va);
-        curenv->page_last_WS_index = (curenv->page_last_WS_index +1)% maxSize;
-    }
-    //Replacment
-    else{
+	//TODO: [PROJECT 2025 - MS2 - [3] Page Fault Handler: PLACEMENT & REPLACEMENT CASES]
+	// Write your code here, remove the panic and write your code
+	//panic("page_fault_handler_with_buffering() is not implemented yet...!!");
+	//refer to the project documentation for the detailed steps of the page fault handler
+	unsigned int maxSize = curenv->page_WS_max_size;
+	uint32 nOfPagesLoaded = env_page_ws_get_size(curenv);
+	uint32 * ptrPageTable = NULL;
+	//Placement
+	if(nOfPagesLoaded < maxSize){
+		uint32 perms = pt_get_page_permissions(curenv, fault_va);
+		if(perms & PERM_BUFFERED){
+			//Updating the permisions and the working set
+			pt_set_page_permissions(curenv, fault_va,PERM_PRESENT ,PERM_BUFFERED);
+			//Get the frame to remove from modd list or free frame list
+			struct Frame_Info * frame = get_frame_info(ptr_page_directory,(void*)fault_va,&ptrPageTable);
+			if(perms & PERM_MODIFIED){
+				bufferlist_remove_page(&modified_frame_list, frame);
+			}
+			else{
+				bufferlist_remove_page(&free_frame_list, frame);
+			}
+			frame->isBuffered = 0;
+		}
+		//Page is not buffered
+		else{
+			//Allocate and map a frame to the given va
+			struct Frame_Info * fptr = NULL;
+			allocate_frame(&fptr);
+			int res = map_frame(ptr_page_directory,fptr,(void*)fault_va,PERM_WRITEABLE);
+			fptr->environment = curenv;
+			// Check if we need to set used bit
+			if(res == 0){
+				res = pf_read_env_page(curenv, (void*)fault_va);
+				if(res!= 0){
+					if(fault_va >= USTACKBOTTOM && fault_va < USTACKTOP){
+						res = pf_add_empty_env_page(curenv, fault_va, 1);
 
-    }
+						if(res!=0) panic("AHHHHHHH");
+					}
+					else{
+						panic("INVALID ADDRESS");
+					}
+				}
+			}
+			else{
+				panic("AHHHHHHHH");
+			}
+		}
+		//Updating working set
+		env_page_ws_set_entry(curenv, curenv->page_last_WS_index, fault_va);
+		curenv->page_last_WS_index = (curenv->page_last_WS_index +1)% maxSize;
+		cprintf("YOOOOOO");
+
+	}
+	//Replacment
+	else{
+		int pass = 1;
+		uint32 ptr = 0;
+		uint32 page;
+		int round = 0 ;
+		uint32 *ptrPageTable2 = NULL;
+		uint32 perms;
+		struct Frame_Info* frame = NULL;
+		while(1==1){
+			if(pass == 1){
+				if(ptr == maxSize){
+					pass = 2;
+					ptr = curenv->page_last_WS_index;
+					continue;
+				}
+				page = curenv->ptr_pageWorkingSet[ptr].virtual_address;
+				 perms = pt_get_page_permissions(curenv, page);
+				if((perms & PERM_MODIFIED) == 0 && (perms & PERM_USED) == 0) break;
+				ptr++;
+			}
+
+			else if(pass == 2){
+				if(round == maxSize){
+					pass = 1;
+					ptr = 0;
+					round = 0;
+					continue;
+				}
+				page = curenv->ptr_pageWorkingSet[ptr].virtual_address;
+				perms = pt_get_page_permissions(curenv, page);
+				if((perms & PERM_USED) == 0)break;
+				pt_set_page_permissions(curenv, page,0 ,PERM_USED);
+				ptr++;
+				round++;
+			}
+
+		}
+		frame = get_frame_info(ptr_page_directory,(void*)page,&ptrPageTable2);
+		frame->isBuffered = 1;
+		frame->environment = curenv;
+		frame->va = page;
+		int res2;
+		pt_set_page_permissions(curenv, page,PERM_BUFFERED ,PERM_PRESENT);
+		if(perms & PERM_MODIFIED){
+			bufferList_add_page(&modified_frame_list,frame);
+			if(LIST_SIZE(&modified_frame_list) == getModifiedBufferLength()){
+				struct Frame_Info *fptr ;
+				LIST_FOREACH(fptr, &modified_frame_list)
+				{
+					res2 = pf_update_env_page(fptr->environment, (void*)fptr->va, fptr);
+					if(res2!=0) panic("cannot update page file");
+					pt_set_page_permissions(fptr->environment, fptr->va,0,PERM_MODIFIED);
+					bufferList_add_page(&free_frame_list,fptr);
+				}
+
+			}
+		}
+		//Add removed page to the free frame list
+		bufferList_add_page(&free_frame_list,frame);
+
+		uint32 perm_page_place = pt_get_page_permissions(curenv, fault_va);
+		if(perm_page_place & PERM_BUFFERED){
+					//Updating the permisions and the working set
+					pt_set_page_permissions(curenv, fault_va,PERM_PRESENT ,PERM_BUFFERED);
+					//Get the frame to remove from modd list or free frame list
+					struct Frame_Info * frame = get_frame_info(ptr_page_directory,(void*)fault_va,&ptrPageTable);
+					if(perm_page_place & PERM_MODIFIED){
+						bufferlist_remove_page(&modified_frame_list, frame);
+					}
+					else{
+						bufferlist_remove_page(&free_frame_list, frame);
+					}
+					frame->isBuffered = 0;
+				}
+		else{
+				//Allocate and map a frame to the given va
+				struct Frame_Info * fptr = NULL;
+				allocate_frame(&fptr);
+				int res = map_frame(ptr_page_directory,fptr,(void*)fault_va,PERM_WRITEABLE);
+				fptr->environment = curenv;
+				// Check if we need to set used bit
+				if(res == 0){
+					res = pf_read_env_page(curenv, (void*)fault_va);
+					if(res!= 0){
+						if(fault_va >= USTACKBOTTOM && fault_va < USTACKTOP){
+							res = pf_add_empty_env_page(curenv, fault_va, 1);
+
+							if(res!=0) panic("AHHHHHHH");
+						}
+						else{
+							panic("INVALID ADDRESS");
+						}
+					}
+				}
+				else{
+					panic("AHHHHHHHH");
+				}
+			}
+		//Updating working set
+		curenv->page_last_WS_index = ptr;
+		env_page_ws_set_entry(curenv, curenv->page_last_WS_index, fault_va);
+		curenv->page_last_WS_index = (curenv->page_last_WS_index +1)% maxSize;
+	}
 
 }
 
