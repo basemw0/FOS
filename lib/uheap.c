@@ -92,7 +92,8 @@ void* malloc(uint32 size)
 void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 {
 	// Write your code here, remove the panic and write your code
-	panic("smalloc() is not implemented yet...!!");
+	panic("smalloc() is not required...!!");
+
 	// Steps:
 	//	1) Implement BEST FIT strategy to search the heap for suitable space
 	//		to the required allocation size (space should be on 4 KB BOUNDARY)
@@ -115,7 +116,7 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 void* sget(int32 ownerEnvID, char *sharedVarName)
 {
 	// Write your code here, remove the panic and write your code
-	panic("sget() is not implemented yet...!!");
+	panic("sget() is not required ...!!");
 
 	// Steps:
 	//	1) Get the size of the shared variable (use sys_getSizeOfSharedObject())

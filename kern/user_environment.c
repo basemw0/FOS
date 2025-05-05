@@ -1008,28 +1008,29 @@ void env_free(struct Env *e)
 
 void __env_free_with_buffering(struct Env *e)
 {
-	__remove_pws_user_pages(e);
-
-	//TODO: [PROJECT 2025 - MS2 - [4] Exit] env_free()
+	//TODO: [PROJECT 2025 - MS2 - [3] Exit] __env_free_with_buffering()
 
 	//YOUR CODE STARTS HERE, remove the panic and write your code ----
-	//panic("env_free() is not implemented yet...!!");
+	panic("__env_free_with_buffering() is not implemented yet...!!");
 
+	__remove_pws_user_pages(e);
 	// [1] Un-buffer any BUFFERED page belong to this environment from the free/modified lists
 	// [2] Free the pages in the PAGE working set from the main memory
-	// [3] Free the PAGE working set array itself from the main memory
-	// [4] Free Shared variables [if any]
-	// [5] Free Semaphores [if any]
-	// [6] Free all TABLES from the main memory
-	// [7] Free the page DIRECTORY from the main memory
+	// [3] Free the PAGE working set itself from the main memory
+	// [4] Free all TABLES from the main memory
+	// [5] Free the page DIRECTORY from the main memory
+	// Steps [6] and [7] ALREADY DONE for you
+	// [6] Remove this program from the page file
+	// [7] Free the environment (return it back to the free environment list)
+
+
+	//DON'T CHANGE THESE LINES
+	// [6] Remove this program from the page file
+	pf_free_env(e);
 	/*========================*/
-	// [8] Remove all pages of this program from the page file
-	/*(ALREADY DONE for you)*/
-	//	pf_free_env(e);
-	/*========================*/
-	// [9] free the environment (return it back to the free environment list)
-	/*(ALREADY DONE for you)*/
-	//	free_environment(e);
+
+	// [7] free the environment (return it back to the free environment list)
+	free_environment(e);
 	/*========================*/
 }
 
