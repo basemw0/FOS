@@ -769,7 +769,7 @@ void allocateMem(struct Env* e, uint32 virtual_address, uint32 size)
 	// Write your code here, remove the panic and write your code
 	//panic("allocateMem() is not implemented yet...!!");
 	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-	for(uint32 j=0;j<=noPages;j++)
+	for(uint32 j=0;j<noPages;j++)
 	{
 	int ret = pf_add_empty_env_page(e, (j*PAGE_SIZE)+virtual_address, 0);
 	if (ret == E_NO_PAGE_FILE_SPACE){
@@ -812,8 +812,8 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 					LIST_INSERT_HEAD(&free_frame_list, myFrame);//may have a problem
 				}
 				myFrame->isBuffered=0;
-				myFrame->environment=NULL;
 			}
+			myFrame->environment=NULL;
 			for(uint32 i=0;i<e->page_WS_max_size;i++)
 			{	if( env_page_ws_is_entry_empty(e,i)==0)
 				{
@@ -824,13 +824,13 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 					}
 				}
 			}
-
+			//Nb2a nbos hena tani
 			pt_clear_page_table_entry(e, myPage);
 			if(page_table!=ptr_page_table)
 			{
 				if(page_table != NULL)
 				{
-					uint32 x=0;
+					uint32 x= pd_is_table_used(Env* ptr_environment, uint32 virtual_address);
 					for(uint32 i=0;i<PAGE_SIZE;i++)
 					{
 						if((*page_table)[i] != NULL)
@@ -841,7 +841,7 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 					}
 					if(x==0)
 					{
-						 pd_clear_page_dir_entry(e,myPage-PAGE_SIZE );
+						 pd_clear_page_dir_entry(e,myPage-PAGE_SIZE);
 					}
 
 				}
@@ -849,7 +849,7 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 
 			}
 
-			pf_remove_env_page(e,myPage );
+			pf_remove_env_page(e,myPage);
 
 
 		}
@@ -872,7 +872,6 @@ void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size
 	//2. Free ONLY pages that are resident in the working set from the memory
 	//3. Free any BUFFERED pages in the given range
 	//4. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
-
 	//Refer to the project presentation and documentation for details
 
 }
