@@ -1,4 +1,4 @@
-
+#include<inc/memlayout.h>
 #include <inc/lib.h>
 
 // malloc()
@@ -18,6 +18,7 @@
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
 
+int flag =0;
 int UHEAP_ARR[USER_ARR_SIZE];
 void* malloc(uint32 size)
 {
@@ -33,11 +34,17 @@ void* malloc(uint32 size)
 	//
 
 	//This function should find the space of the required range
-	// ******** ON 4KB BOUNDARY ******************* //
+	// *** ON 4KB BOUNDARY ******** //
 
 	//Use sys_isUHeapPlacementStrategyBESTFIT() to check the current strategy
 
 	//change this "return" according to your answer
+	if(flag ==0){
+	for(int i =0;i <USER_ARR_SIZE;i++){
+		UHEAP_ARR[i] = -1;
+	}
+	flag++;
+	}
 	/* WORSTFIT */
 
 			/*
@@ -57,6 +64,7 @@ void* malloc(uint32 size)
 		int start =-1;
 		int count = 0;
 		while(i < USER_ARR_SIZE){
+
 			if(UHEAP_ARR[i]==-1){
 				if (start == -1)
 					start = i;
@@ -80,10 +88,12 @@ void* malloc(uint32 size)
 				}
 			}
 
-		void* VirtualAddress = USER_HEAP_START + (worstStart * PAGE_SIZE);
+		uint32 VirtualAddress = USER_HEAP_START + (worstStart * PAGE_SIZE);
 		if(worst >= process_size){ //check if the largest available slot is larger than the process_size
-				sys_allocatemem(VirtualAddress,size); //Call kernel mode to allocate
-				return VirtualAddress;
+				sys_allocateMem(VirtualAddress,size); //Call kernel mode to allocate
+
+				UHEAP_ARR[worstStart] = process_size;
+				return (void*)VirtualAddress;
 		}else{
 			return NULL;
 		}
@@ -152,14 +162,38 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 
 void free(void* virtual_address)
 {
-	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] free() [User Side]
-	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+    //TODO: [PROJECT 2025 - MS2 - [2] User Heap] free() [User Side]
+    // Write your code here, remove the panic and write your code
+    //panic("free() is not implemented yet...!!");
+    //check if virtual address is within the kheap boundary
+    if ((uint32)virtual_address < USER_HEAP_START || (uint32)virtual_address >= USER_HEAP_MAX)
+            return;
+    //store the given virtual address in an unsigned 32 bit integer
+    uint32 va = (uint32)virtual_address;
+    //get the index of the virtual address in theKHEAP_ARR
+    uint32 page_number = (va - USER_HEAP_START)/PAGE_SIZE;
 
-	//you should get the size of the given allocation using its address
-	//you need to call sys_freeMem()
-	//refer to the project presentation and documentation for details
+    //check if the given virtual address is already free
+    if (UHEAP_ARR[page_number] == -1)
+                return;
+
+    //else if the given virtual address is valid extract the block_size (in page numbers)
+    uint32 block_size = UHEAP_ARR[page_number];
+
+    //get the upper bound for the virtual address to free
+    uint32 end_address = va + (block_size * PAGE_SIZE);
+
+    //used in the get_frame_info to store a pointer to the page table of the current virtual address
+    uint32 * ptr_page = NULL;
+
+    //Reset the start of the virtual address block by -1(free)
+    UHEAP_ARR[page_number] = -1;
+    sys_freeMem(va,(block_size * PAGE_SIZE));
+    //you should get the size of the given allocation using its address
+    //you need to call sys_freeMem()
+    //refer to the project presentation and documentation for details
 }
+
 
 
 //==================================================================================//
