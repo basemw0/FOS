@@ -788,130 +788,108 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  }
 
  void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size)
- {
- 	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] freeMem() [Kernel Side]
- 	// Write your code here, remove the panic and write your code
- 	//panic("__freeMem_with_buffering() is not implemented yet...!!");
- 	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-// 	cprintf("No of pages needed deleeeete:  %u \n",noPages);
- 	uint32 *page_table=NULL;
-    uint32 *ptr_page_table;
-    uint32 myPage = 0;
-    uint32 prevPage = 0;
+  {
+  	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] freeMem() [Kernel Side]
+  	// Write your code here, remove the panic and write your code
+  	//panic("__freeMem_with_buffering() is not implemented yet...!!");
+  	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+  	uint32 *page_table=NULL;
+     uint32 *ptr_page_table;
+     uint32 myPage = 0;
+     uint32 prevPage = 0;
+  		for(uint32 j=0;j<noPages;j++)
+  		{
+  			myPage=(j*PAGE_SIZE)+virtual_address;
+  			struct Frame_Info* myFrame=get_frame_info(e->env_page_directory,(void*)myPage,&ptr_page_table);
+
+  			if(myFrame!= NULL && myFrame->isBuffered !=0)
+  			{
+  				uint32 page_permissions = pt_get_page_permissions(e, myPage);
+  				if(page_permissions & PERM_MODIFIED)
+  				{
+  					bufferlist_remove_page(&modified_frame_list, myFrame);
+  				}
+  				else{
+  					bufferlist_remove_page(&free_frame_list, myFrame);
+  				}
+  				free_frame(myFrame);
+  				pt_clear_page_table_entry(e, myPage);
+  			}
+
+  			for(uint32 i=0;i<e->page_WS_max_size;i++)
+  			{	if( env_page_ws_is_entry_empty(e,i)==0)
+  				{
+  					if(e->ptr_pageWorkingSet[i].virtual_address==myPage)
+  					{
+  						unmap_frame(e->env_page_directory,(void*)myPage);
+  						pt_clear_page_table_entry(e, myPage);
+  						env_page_ws_clear_entry(e, i);
+  						break;
+  					}
+  				}
+  			}
+  			pf_remove_env_page(e,myPage);
 
 
- 		for(uint32 j=0;j<noPages;j++)
- 		{
- 			myPage=(j*PAGE_SIZE)+virtual_address;
- 			struct Frame_Info* myFrame=get_frame_info(e->env_page_directory,(void*)myPage,&ptr_page_table);
+  			if(page_table!=ptr_page_table)
+  			{
+  				if(page_table != NULL)
+  				{
+  					uint32 x=0;
 
- 			if(myFrame!= NULL && myFrame->isBuffered !=0)
+  					for(uint32 i=0;i<1024;i++)
+  					{
+
+  						if(page_table[i] & PERM_PRESENT)
+  						{
+  							x=1;
+  							break;
+  						}
+  					}
+  					if(x==0)
+  					{
+  						 kfree(page_table);
+  						 pd_clear_page_dir_entry(e,prevPage);
+
+  					}
+
+  				}
+  				page_table=ptr_page_table;
+
+  			}
+ 		    if(myFrame!= NULL) prevPage=myPage;
+  		}
+  		if(page_table != NULL)
  			{
- 				uint32 page_permissions = pt_get_page_permissions(e, myPage);
- 				if(page_permissions & PERM_MODIFIED)
- 				{
- 					bufferlist_remove_page(&modified_frame_list, myFrame);
- 				}
- 				else{
- 					bufferlist_remove_page(&free_frame_list, myFrame);
- 				}
- 				//myFrame->isBuffered=0;
-// 				myFrame->environment=NULL;
+ 				uint32 x=0;
 
- 				//may have a problem
- 	 		 //Clear PT entry
- 				uint32 frameAddress = to_physical_address(myFrame);
- 				cprintf("Frame address : %u \n",frameAddress);
- 				free_frame(myFrame);
- 				pt_clear_page_table_entry(e, myPage);
- 				// 			else{
- 			}
-
- 			for(uint32 i=0;i<e->page_WS_max_size;i++)
- 			{	if( env_page_ws_is_entry_empty(e,i)==0)
+ 				for(uint32 i=0;i<1024;i++)
  				{
- 					if(e->ptr_pageWorkingSet[i].virtual_address==myPage)
+
+ 					if(page_table[i] & PERM_PRESENT)
  					{
-// 						cprintf("El no. of pages in the WS rn : %u \n",env_page_ws_get_size(e));
-// 						cprintf("EL max size : %u\n",e->page_WS_max_size);
-// 						cprintf("EL i : %u\n",i);
-// 						e->page_last_WS_index = i;
-						cprintf("E7NA BNMSA7 mn el WS index : %d \n",i);
-						free_frame(myFrame);
- 						pt_clear_page_table_entry(e, myPage);
- 						env_page_ws_clear_entry(e, i);
+ 						x=1;
  						break;
  					}
  				}
- 			}
-// 			}
- 			pf_remove_env_page(e,myPage);
-// 			cprintf("El no. of pages in the WS rn ba3d m shelna: %u\n",env_page_ws_get_size(e));
-// 			cprintf("Page no : %u \n",myPage);
- 			//Nb2a nbos hena tani
-
- 			if(page_table!=ptr_page_table)
- 			{
- 				if(page_table != NULL)
+ 				if(x==0)
  				{
- 					uint32 x=0;
-
- 					for(uint32 i=0;i<1024;i++)
- 					{
-
- 						if(page_table[i] & PERM_PRESENT)
- 						{
- 							x=1;
- 							break;
- 						}
- 					}
- 					if(x==0)
- 					{
-						 cprintf("E7NA BNMSA7 page table \n");
- 						 kfree(page_table);
- 						 pd_clear_page_dir_entry(e,prevPage);
-
- 					}
+ 					 kfree(page_table);
+ 					 pd_clear_page_dir_entry(e,prevPage);
 
  				}
- 				page_table=ptr_page_table;
 
  			}
- 				if(myFrame!= NULL) prevPage=myPage;
- 			//COULD BE A MAJOR ISSUE INSHALLA LA
- 		}
- 		if(page_table != NULL)
-			{
-				uint32 x=0;
-
-				for(uint32 i=0;i<1024;i++)
-				{
-
-					if(page_table[i] & PERM_PRESENT)
-					{
-						x=1;
-						break;
-					}
-				}
-				if(x==0)
-				{
-				 cprintf("E7NA BNMSA7 page table \n");
-					 kfree(page_table);
-					 pd_clear_page_dir_entry(e,prevPage);
-
-				}
-
-			}
 
 
- 	//This function should:
- 	//1. Free ALL pages of the given range from the Page File
- 	//2. Free ONLY pages that are resident in the working set from the memory
- 	//3. Free any BUFFERED pages in the given range
- 	//4. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
- 	//Refer to the project presentation and documentation for details
+  	//This function should:
+  	//1. Free ALL pages of the given range from the Page File
+  	//2. Free ONLY pages that are resident in the working set from the memory
+  	//3. Free any BUFFERED pages in the given range
+  	//4. Removes ONLY the empty page tables (i.e. not used) (no pages are mapped in the table)
+  	//Refer to the project presentation and documentation for details
 
- }
+  }
 
  //================= [BONUS] =====================
  // [3] moveMem
