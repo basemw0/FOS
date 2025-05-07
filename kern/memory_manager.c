@@ -797,6 +797,8 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  	uint32 *page_table=NULL;
     uint32 *ptr_page_table;
     uint32 myPage = 0;
+    uint32 prevPage = 0;
+
 
  		for(uint32 j=0;j<noPages;j++)
  		{
@@ -848,9 +850,8 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
 // 			cprintf("Page no : %u \n",myPage);
  			//Nb2a nbos hena tani
 
-// 			if(page_table!=ptr_page_table)
-// 			{
- 			page_table = ptr_page_table;
+ 			if(page_table!=ptr_page_table)
+ 			{
  				if(page_table != NULL)
  				{
  					uint32 x=0;
@@ -868,32 +869,40 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  					{
 						 cprintf("E7NA BNMSA7 page table \n");
  						 kfree(page_table);
- 						 pd_clear_page_dir_entry(e,myPage);
+ 						 pd_clear_page_dir_entry(e,prevPage);
 
  					}
 
  				}
-// 				page_table=ptr_page_table;
-//
-// 			}
+ 				page_table=ptr_page_table;
 
+ 			}
+ 				if(myFrame!= NULL) prevPage=myPage;
  			//COULD BE A MAJOR ISSUE INSHALLA LA
  		}
-// 		uint32 x=0;
-// 		for(uint32 i=0;i<1024;i++)
-// 		{
-// 			if(page_table[i] != 0)
-// 			{
-// 				x=1;
-// 				break;
-// 			}
-// 		}
-// 		if(x==0)
-// 		{
-// 			 cprintf("E7NA BNMSA7 \n");
-// 			 kfree(page_table);
-// 			 pd_clear_page_dir_entry(e,myPage);
-// 		}
+ 		if(page_table != NULL)
+			{
+				uint32 x=0;
+
+				for(uint32 i=0;i<1024;i++)
+				{
+
+					if(page_table[i] & PERM_PRESENT)
+					{
+						x=1;
+						break;
+					}
+				}
+				if(x==0)
+				{
+				 cprintf("E7NA BNMSA7 page table \n");
+					 kfree(page_table);
+					 pd_clear_page_dir_entry(e,prevPage);
+
+				}
+
+			}
+
 
  	//This function should:
  	//1. Free ALL pages of the given range from the Page File
