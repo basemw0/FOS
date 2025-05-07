@@ -771,7 +771,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
 	 uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	 for(uint32 j=0;j<noPages;j++)
 	 {
-	 int ret = pf_add_empty_env_page(e, (j*PAGE_SIZE)+virtual_address, 0);
+	 int ret = pf_add_empty_env_page(e, (j*PAGE_SIZE)+virtual_address,1);
 	 if (ret == E_NO_PAGE_FILE_SPACE){
 		 panic("ERROR: No enough virtual space on the page file");
 	 }
@@ -793,13 +793,17 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  	// Write your code here, remove the panic and write your code
  	//panic("__freeMem_with_buffering() is not implemented yet...!!");
  	uint32 noPages=ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+// 	cprintf("No of pages needed deleeeete:  %u \n",noPages);
  	uint32 *page_table=NULL;
+    uint32 *ptr_page_table;
+    uint32 myPage = 0;
+
  		for(uint32 j=0;j<noPages;j++)
  		{
- 			uint32 myPage=(j*PAGE_SIZE)+virtual_address;
- 			uint32 *ptr_page_table;
+ 			myPage=(j*PAGE_SIZE)+virtual_address;
  			struct Frame_Info* myFrame=get_frame_info(e->env_page_directory,(void*)myPage,&ptr_page_table);
- 			if(myFrame->isBuffered !=0)
+
+ 			if(myFrame!= NULL && myFrame->isBuffered !=0)
  			{
  				uint32 page_permissions = pt_get_page_permissions(e, myPage);
  				if(page_permissions & PERM_MODIFIED)
@@ -808,31 +812,53 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  				}
  				else{
  					bufferlist_remove_page(&free_frame_list, myFrame);
- 					LIST_INSERT_HEAD(&free_frame_list, myFrame);//may have a problem
  				}
- 				myFrame->isBuffered=0;
+ 				//myFrame->isBuffered=0;
+// 				myFrame->environment=NULL;
+
+ 				//may have a problem
+ 	 		 //Clear PT entry
+ 				uint32 frameAddress = to_physical_address(myFrame);
+ 				cprintf("Frame address : %u \n",frameAddress);
+ 				free_frame(myFrame);
+ 				pt_clear_page_table_entry(e, myPage);
+ 				// 			else{
  			}
- 			myFrame->environment=NULL;
+
  			for(uint32 i=0;i<e->page_WS_max_size;i++)
  			{	if( env_page_ws_is_entry_empty(e,i)==0)
  				{
  					if(e->ptr_pageWorkingSet[i].virtual_address==myPage)
  					{
- 						env_page_ws_clear_entry( e, i);
+// 						cprintf("El no. of pages in the WS rn : %u \n",env_page_ws_get_size(e));
+// 						cprintf("EL max size : %u\n",e->page_WS_max_size);
+// 						cprintf("EL i : %u\n",i);
+// 						e->page_last_WS_index = i;
+						cprintf("E7NA BNMSA7 mn el WS index : %d \n",i);
+						free_frame(myFrame);
+ 						pt_clear_page_table_entry(e, myPage);
+ 						env_page_ws_clear_entry(e, i);
  						break;
  					}
  				}
  			}
+// 			}
+ 			pf_remove_env_page(e,myPage);
+// 			cprintf("El no. of pages in the WS rn ba3d m shelna: %u\n",env_page_ws_get_size(e));
+// 			cprintf("Page no : %u \n",myPage);
  			//Nb2a nbos hena tani
- 			pt_clear_page_table_entry(e, myPage);
- 			if(page_table!=ptr_page_table)
- 			{
+
+// 			if(page_table!=ptr_page_table)
+// 			{
+ 			page_table = ptr_page_table;
  				if(page_table != NULL)
  				{
  					uint32 x=0;
- 					for(uint32 i=0;i<PAGE_SIZE;i++)
+
+ 					for(uint32 i=0;i<1024;i++)
  					{
- 						if((page_table)[i] != 0)
+
+ 						if(page_table[i] & PERM_PRESENT)
  						{
  							x=1;
  							break;
@@ -840,30 +866,34 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  					}
  					if(x==0)
  					{
- 						 pd_clear_page_dir_entry(e,myPage-PAGE_SIZE);
+						 cprintf("E7NA BNMSA7 page table \n");
+ 						 kfree(page_table);
+ 						 pd_clear_page_dir_entry(e,myPage);
+
  					}
 
  				}
- 				page_table=ptr_page_table;
+// 				page_table=ptr_page_table;
+//
+// 			}
 
- 			}
-
- 			pf_remove_env_page(e,myPage );
  			//COULD BE A MAJOR ISSUE INSHALLA LA
  		}
- 		uint32 x=0;
- 		for(uint32 i=0;i<PAGE_SIZE;i++)
- 		{
- 			if((page_table)[i] != 0)
- 			{
- 				x=1;
- 				break;
- 			}
- 		}
- 		if(x==0)
- 		{
- 			 pd_clear_page_dir_entry(e,virtual_address+PAGE_SIZE*noPages);
- 		}
+// 		uint32 x=0;
+// 		for(uint32 i=0;i<1024;i++)
+// 		{
+// 			if(page_table[i] != 0)
+// 			{
+// 				x=1;
+// 				break;
+// 			}
+// 		}
+// 		if(x==0)
+// 		{
+// 			 cprintf("E7NA BNMSA7 \n");
+// 			 kfree(page_table);
+// 			 pd_clear_page_dir_entry(e,myPage);
+// 		}
 
  	//This function should:
  	//1. Free ALL pages of the given range from the Page File

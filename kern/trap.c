@@ -447,11 +447,12 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 	// Write your code here, remove the panic and write your code
 	//panic("page_fault_handler_with_buffering() is not implemented yet...!!");
 	//refer to the project documentation for the detailed steps of the page fault handler
+	cprintf("Faulted address : %n \n",fault_va);
 	unsigned int maxSize = curenv->page_WS_max_size;
 	uint32 nOfPagesLoaded = env_page_ws_get_size(curenv);
 	uint32 * ptrPageTable = NULL;
-	cprintf("ptr_page_directory :%u\n" , ptr_page_directory);
-	cprintf("env_page_dir :%u\n" , curenv->env_page_directory);
+//	cprintf("ptr_page_directory :%u\n" , ptr_page_directory);
+//	cprintf("env_page_dir :%u\n" , curenv->env_page_directory);
 	//Placement
 	if(nOfPagesLoaded < maxSize){
 		uint32 perms = pt_get_page_permissions(curenv, fault_va);
@@ -485,7 +486,8 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 						if(res!=0) panic("AHHHHHHH");
 					}
 					else{
-						panic("INVALID ADDRESS");
+						cprintf("INVALID ADDRESS");
+						return;
 					}
 				}
 			}
@@ -494,9 +496,13 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 			}
 		}
 		//Updating working set
+		//3a4an el removal el 3and badra
+		while(curenv->ptr_pageWorkingSet[curenv->page_last_WS_index].empty == 0){
+			curenv->page_last_WS_index++;
+		}
 		env_page_ws_set_entry(curenv, curenv->page_last_WS_index, fault_va);
 		curenv->page_last_WS_index = (curenv->page_last_WS_index +1)% maxSize;
-		cprintf("YOOOOOO");
+//		cprintf("YOOOOOO");
 
 	}
 	//Replacment
@@ -604,7 +610,7 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 							if(res!=0) panic("AHHHHHHH");
 						}
 						else{
-							panic("INVALID ADDRESS");
+							panic("INVALID ADDRESS replacement");
 
 						}
 					}

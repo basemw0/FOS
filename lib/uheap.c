@@ -58,7 +58,7 @@ void* malloc(uint32 size)
 		if(size == 0)
 				return NULL;
 		int process_size = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-		int i =0;
+		int i = 0;
 		int worst =-1;
 		int worstStart =-1;
 		int start =-1;
@@ -91,7 +91,6 @@ void* malloc(uint32 size)
 		uint32 VirtualAddress = USER_HEAP_START + (worstStart * PAGE_SIZE);
 		if(worst >= process_size){ //check if the largest available slot is larger than the process_size
 				sys_allocateMem(VirtualAddress,size); //Call kernel mode to allocate
-
 				UHEAP_ARR[worstStart] = process_size;
 				return (void*)VirtualAddress;
 		}else{
@@ -183,12 +182,13 @@ void free(void* virtual_address)
     //get the upper bound for the virtual address to free
     uint32 end_address = va + (block_size * PAGE_SIZE);
 
-    //used in the get_frame_info to store a pointer to the page table of the current virtual address
-    uint32 * ptr_page = NULL;
+
 
     //Reset the start of the virtual address block by -1(free)
-    UHEAP_ARR[page_number] = -1;
     sys_freeMem(va,(block_size * PAGE_SIZE));
+    UHEAP_ARR[page_number] = -1;
+
+
     //you should get the size of the given allocation using its address
     //you need to call sys_freeMem()
     //refer to the project presentation and documentation for details
