@@ -1008,7 +1008,7 @@ void env_free(struct Env *e)
 void __env_free_with_buffering
 (struct Env *e)
 {
-//	__remove_pws_user_pages(e);
+	__remove_pws_user_pages(e);
 	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] freeMem() [Kernel Side]
 	  	// Write your code here, remove the panic and write your code
 //	  	panic("__freeMem_with_buffering() is not implemented yet...!!");
@@ -1342,4 +1342,3 @@ env_pop_tf(struct Trapframe *tf)
 			: : "g" (tf) : "memory");
 	panic("iret failed");  /* mostly to placate the compiler */
 }
-

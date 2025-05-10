@@ -813,7 +813,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   				else{
   					bufferlist_remove_page(&free_frame_list, myFrame);
   				}
-  				free_frame(myFrame);
+  				unmap_frame(e->env_page_directory,(void*)myPage);
   				pt_clear_page_table_entry(e, myPage);
   				}
   			}
@@ -830,6 +830,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   					}
   				}
   			}
+  			if(size != USER_TOP && virtual_address != 0)
   			pf_remove_env_page(e,myPage);
   			if(ptr_page_table != NULL && page_table!=ptr_page_table)
   			{
@@ -1534,6 +1535,3 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  uint32 isKHeapPlacementStrategyBESTFIT() { if (_KHeapPlacementStrategy == KHP_PLACE_BESTFIT) return 1; return 0; }
  uint32 isKHeapPlacementStrategyNEXTFIT() { if (_KHeapPlacementStrategy == KHP_PLACE_NEXTFIT) return 1; return 0; }
  uint32 isKHeapPlacementStrategyWORSTFIT() { if (_KHeapPlacementStrategy == KHP_PLACE_WORSTFIT) return 1; return 0; }
-
-
-
