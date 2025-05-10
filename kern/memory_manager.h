@@ -123,6 +123,7 @@ static inline struct Frame_Info* to_frame_info(uint32 physical_address)
 
 
 void freeMem(struct Env* e, uint32 virtual_address, uint32 size);
+void __freeMem_with_buffering(struct Env* e, uint32 virtual_address, uint32 size);
 void allocateMem(struct Env* e, uint32 virtual_address, uint32 size);
 void moveMem(struct Env* e, uint32 src_virtual_address, uint32 dst_virtual_address, uint32 size);
 uint32 calculate_required_frames(uint32* ptr_page_directory, uint32 start_virtual_address, uint32 size);

@@ -797,14 +797,15 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
      uint32 *ptr_page_table;
      uint32 myPage = 0;
      uint32 prevPage = 0;
+     uint32 counter = 0;
   		for(uint32 j=0;j<noPages;j++)
   		{
   			myPage=(j*PAGE_SIZE)+virtual_address;
-  			struct Frame_Info* myFrame=get_frame_info(e->env_page_directory,(void*)myPage,&ptr_page_table);
-
-  			if(myFrame!= NULL && myFrame->isBuffered !=0)
+		    uint32 page_permissions = pt_get_page_permissions(e, myPage);
+  			if(page_permissions & PERM_BUFFERED)
   			{
-  				uint32 page_permissions = pt_get_page_permissions(e, myPage);
+  				struct Frame_Info* myFrame=get_frame_info(e->env_page_directory,(void*)myPage,&ptr_page_table);
+  				if(myFrame != NULL){
   				if(page_permissions & PERM_MODIFIED)
   				{
   					bufferlist_remove_page(&modified_frame_list, myFrame);
@@ -814,8 +815,9 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   				}
   				free_frame(myFrame);
   				pt_clear_page_table_entry(e, myPage);
+  				}
   			}
-
+  			get_page_table(e->env_page_directory,(void*)myPage,&ptr_page_table);
   			for(uint32 i=0;i<e->page_WS_max_size;i++)
   			{	if( env_page_ws_is_entry_empty(e,i)==0)
   				{
@@ -829,9 +831,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   				}
   			}
   			pf_remove_env_page(e,myPage);
-
-
-  			if(page_table!=ptr_page_table)
+  			if(ptr_page_table != NULL && page_table!=ptr_page_table)
   			{
   				if(page_table != NULL)
   				{
@@ -851,13 +851,14 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   						 kfree(page_table);
   						 pd_clear_page_dir_entry(e,prevPage);
 
+
   					}
 
   				}
   				page_table=ptr_page_table;
 
   			}
- 		    if(myFrame!= NULL) prevPage=myPage;
+  			prevPage = myPage;
   		}
   		if(page_table != NULL)
  			{
@@ -874,8 +875,10 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
  				}
  				if(x==0)
  				{
+
  					 kfree(page_table);
  					 pd_clear_page_dir_entry(e,prevPage);
+
 
  				}
 
@@ -890,6 +893,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
   	//Refer to the project presentation and documentation for details
 
   }
+
 
  //================= [BONUS] =====================
  // [3] moveMem
@@ -993,6 +997,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
 
 	 LIST_FOREACH(ptr, &free_frame_list)
 	 {
+
 		 if (ptr->isBuffered)
 			 totalFreeBuffered++;
 		 else
@@ -1005,6 +1010,7 @@ FUNCTIONS:	to_physical_address, get_frame_info, tlb_invalidate
 	 {
 		 totalModified++;
 	 }
+
 
 
 	 struct freeFramesCounters counters;

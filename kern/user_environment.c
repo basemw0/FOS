@@ -1005,34 +1005,22 @@ void env_free(struct Env *e)
 {
 	panic("This function is not required.");
 }
-
-void __env_free_with_buffering(struct Env *e)
+void __env_free_with_buffering
+(struct Env *e)
 {
-	//TODO: [PROJECT 2025 - MS2 - [3] Exit] __env_free_with_buffering()
+//	__remove_pws_user_pages(e);
+	//TODO: [PROJECT 2025 - MS2 - [2] User Heap] freeMem() [Kernel Side]
+	  	// Write your code here, remove the panic and write your code
+//	  	panic("__freeMem_with_buffering() is not implemented yet...!!");
+	__freeMem_with_buffering(e,0,USER_TOP);
+    kfree(e->ptr_pageWorkingSet);
+    kfree(e->env_page_directory);
+    e->env_page_directory = NULL;
+    pf_free_env(e);
+    free_environment(e);
 
-	//YOUR CODE STARTS HERE, remove the panic and write your code ----
-	panic("__env_free_with_buffering() is not implemented yet...!!");
-
-	__remove_pws_user_pages(e);
-	// [1] Un-buffer any BUFFERED page belong to this environment from the free/modified lists
-	// [2] Free the pages in the PAGE working set from the main memory
-	// [3] Free the PAGE working set itself from the main memory
-	// [4] Free all TABLES from the main memory
-	// [5] Free the page DIRECTORY from the main memory
-	// Steps [6] and [7] ALREADY DONE for you
-	// [6] Remove this program from the page file
-	// [7] Free the environment (return it back to the free environment list)
-
-
-	//DON'T CHANGE THESE LINES
-	// [6] Remove this program from the page file
-	pf_free_env(e);
-	/*========================*/
-
-	// [7] free the environment (return it back to the free environment list)
-	free_environment(e);
-	/*========================*/
 }
+
 
 
 ///*****************************************************************************************

@@ -512,8 +512,8 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 							res2 = pf_update_env_page(fptr->environment, (void*)fptr->va, fptr);
 							if(res2!=0) panic("cannot update page file");
 							pt_set_page_permissions(fptr->environment, fptr->va,0,PERM_MODIFIED);
-							bufferList_add_page(&free_frame_list,fptr);
 							bufferlist_remove_page(&modified_frame_list,fptr);
+							bufferList_add_page(&free_frame_list,fptr);
 						}
 
 					}
