@@ -9,7 +9,6 @@ Implements core OS memory management components:
 - Kernel/User heap allocators (Best Fit/First Fit/Worst Fit) -> *kheap.c/uheap.c*
 - Page fault handler with Modified Clock replacement -> *trap.c*
 - Page buffering and working set management -> *memory_manager.c*
-- System calls for `malloc`/`free`
 - Freeing the environment (killing the processes) -> *user_environment.c*
 
 ## Key Features
