@@ -19,9 +19,14 @@ Implements core OS memory management components:
 
 ## Authors
 [Basem Walid](https://github.com/basemw0)
+
 [Amir Tamer](https://github.com/amirtamer-27)
+
 [Mohamed Wael Badra](https://github.com/MohamedWBadra)
+
 [Mohamed Wael ElSayed](https://github.com/memoo221)
+
 [Moaz Ahmed](https://github.com/Moaz715)
+
 [Youssef Waleed](https://github.com/weloo11)
 
