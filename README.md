@@ -2,8 +2,6 @@
 **OS 2025 Course Project**  
 *Ain Shams University, Faculty of Computer and Ai Engineering*
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 A kernel implementation for virtual memory management, page replacement, and dynamic allocation.
 
 ## Project Overview
@@ -20,5 +18,10 @@ Implements core OS memory management components:
 - **System Integration**: Environment lifecycle management, user-kernel mode switching
 
 ## Authors
-
+[Basem Walid](https://github.com/basemw0)
+[Amir Tamer](https://github.com/amirtamer-27)
+[Mohamed Wael Badra](https://github.com/MohamedWBadra)
+[Mohamed Wael ElSayed](https://github.com/memoo221)
+[Moaz Ahmed](https://github.com/Moaz715)
+[Youssef Waleed](https://github.com/weloo11)
 
