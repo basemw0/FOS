@@ -1,6 +1,6 @@
-# FOS Kernel - Memory Management (Milestone 2)  
+# FOS Kernel - Memory Management 
 **OS 2025 Course Project**  
-*Ain Shams University, Faculty of Computer and Information Sciences*
+*Ain Shams University, Faculty of Computer and Ai Engineering*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -19,12 +19,6 @@ Implements core OS memory management components:
 - **Page Replacement**: Buffered modified/free lists, Modified Clock algorithm
 - **System Integration**: Environment lifecycle management, user-kernel mode switching
 
-## Build & Run
-**Prerequisites**:  
-- `gcc`, `nasm`, `make`, Bochs/QEMU
+## Authors
 
-**Compile**:  
-```bash
-git clone https://github.com/yourusername/fos-kernel.git
-cd fos-kernel
-make all
+
