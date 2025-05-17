@@ -6,9 +6,9 @@ A kernel implementation for virtual memory management, page replacement, and dyn
 
 ## Project Overview
 Implements core OS memory management components:
-- Kernel/User heap allocators (Best Fit/First Fit/Worst Fit)
-- Page fault handler with Modified Clock replacement
-- Page buffering and working set management
+- Kernel/User heap allocators (Best Fit/First Fit/Worst Fit) (kheap.c/uheap.c)
+- Page fault handler with Modified Clock replacement (trap.c)
+- Page buffering and working set management (memory_manager.c)
 - System calls for `malloc`/`free`
 
 ## Key Features
