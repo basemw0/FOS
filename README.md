@@ -17,7 +17,7 @@ Implements core OS memory management components:
 - **Page Replacement**: Buffered modified/free lists, Modified Clock algorithm
 - **System Integration**: Environment lifecycle management, user-kernel mode switching
 
-#Authors
+## Authors
 [Basem Walid](https://github.com/basemw0)
 
 [Amir Tamer](https://github.com/amirtamer-27)
