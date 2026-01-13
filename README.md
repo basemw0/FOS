@@ -22,7 +22,7 @@ Implements core OS memory management components:
 
 [Amir Tamer](https://github.com/amirtamer-27)
 
-[Mohamed Wael Badra](https://github.com/MohamedWBadra)
+[Mohamed Wael Badra](https://github.com/MWBadra)
 
 [Mohamed Wael ElSayed](https://github.com/memoo221)
 
